@@ -9,7 +9,7 @@ This module implements a configuration interface, with its main purpose
 being the simple merging of istatically configured and command line parameters.
 """
 
-__all__ = []
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
 
 import yaml
 import argparse
