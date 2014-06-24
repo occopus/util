@@ -21,8 +21,8 @@ class Config(object):
     def __init__(self, **kwargs):
         self.__parser = argparse.ArgumentParser(**kwargs)
 
-    def parse_args(self):
-        self.__parser.parse_args(namespace=self)
+    def parse_args(self, args=None):
+        self.__parser.parse_args(namespace=self, args=args)
 
     def __repr__(self):
         return yaml.dump(self.__dict__, default_flow_style=False)
