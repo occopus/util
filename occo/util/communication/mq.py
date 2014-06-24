@@ -4,5 +4,6 @@
 # Configuration primitives for the SZTAKI Cloud Orchestrator
 #
 
-from comm import *
-from mq import *
+__all__ = []
+
+import occo.util.communication as com
