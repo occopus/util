@@ -1,0 +1,11 @@
+---
+setting_1: 1
+setting_2: 2
+complex_setting:
+    cs_1: 3
+    cs_2: 4
+    cs_3: 5
+list_setting:
+    - a
+    - b
+    - c
