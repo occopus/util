@@ -18,7 +18,8 @@ class ConfigTest(unittest.TestCase):
             list_setting=['a', 'b', 'c']
         )
     def test_load(self):
-        args = cfg.DefaultYAMLConfig(self.filename)
+        with open(self.filename) as f:
+            args = cfg.DefaultYAMLConfig(f)
         args.parse_args()
         self.assertEqual(self.ethalon, args.__dict__)
 
