@@ -21,7 +21,7 @@ class ConfigTest(unittest.TestCase):
         with open(self.filename) as f:
             args = cfg.DefaultYAMLConfig(f)
         args.parse_args()
-        self.assertEqual(self.ethalon, args.__dict__)
+        self.assertDictContainsSubset(self.ethalon, self.args.__dict__)
 
 class ConfigTestSuite(unittest.TestSuite):
     def __init__(self):
