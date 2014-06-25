@@ -14,7 +14,7 @@ class MQTest(unittest.TestCase):
         self.test_config = dict(protocol='amqp', extra='something')
         self.fail_config = dict(extra='something')
     def test_inst(self):
-        map(lambda cls1, cls2: \
+        map(lambda (cls1, cls2): \
                 self.assertEqual(cls1(**self.test_config).__class__, cls2),
             [(comm.AsynchronProducer, mq.MQAsynchronProducer),
              (comm.RPCProducer, mq.MQRPCProducer),
