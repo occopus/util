@@ -14,8 +14,15 @@ class MQTest(unittest.TestCase):
         self.test_config = dict(protocol='amqp', extra='something')
         self.fail_config = dict(extra='something')
     def test_inst(self):
-        self.assertEqual(comm.AsynchronProducer(**self.test_config).__class__,
-                         mq.MQAsynchronProducer)
+        self.assertEqual(
+            comm.AsynchronProducer(**self.test_config).__class__,
+            mq.MQAsynchronProducer)
+        self.assertEqual(
+            comm.RPCProducer(**self.test_config).__class__,
+            mq.MQRPCProducer)
+        self.assertEqual(
+            comm.EventDrivenConsumer(**self.test_config).__class__,
+            mq.MQEventDrivenConsumer)
 
 class MQTestSuite(unittest.TestSuite):
     def __init__(self):
