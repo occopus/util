@@ -33,19 +33,13 @@ class MultiBackend(object):
         return object.__new__(cls.backends[protocol], *args, **kwargs)
 
 class AsynchronProducer(MultiBackend):
-    def __init__(self):
-        pass
     def push_message(self, message, **kwargs):
         raise NotImplementedError
 
 class RPCProducer(MultiBackend):
-    def __init__(self):
-        pass
     def push_message(self, message, **kwargs):
         raise NotImplementedError
 
 class EventDrivenConsumer(MultiBackend):
-    def __init__(self):
-        pass
     def start_consuming(self, processor, **kwargs):
         raise NotImplementedError
