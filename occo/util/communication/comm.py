@@ -4,7 +4,8 @@
 # Configuration primitives for the SZTAKI Cloud Orchestrator
 #
 
-__all__ = ['AsynchronProducer', 'RPCProducer', 'EventDrivenConsumer', 'register']
+__all__ = ['AsynchronProducer', 'RPCProducer', 'EventDrivenConsumer',
+           'register', 'ConfigurationError']
 
 class ConfigurationError(Exception):
     pass
