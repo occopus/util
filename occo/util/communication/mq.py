@@ -5,7 +5,7 @@
 #
 
 __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
-           'MQEventDriverConsumer']
+           'MQEventDrivenConsumer']
 
 import comm
 
