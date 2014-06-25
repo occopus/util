@@ -19,12 +19,18 @@ class MQTest(unittest.TestCase):
             [(comm.AsynchronProducer, mq.MQAsynchronProducer),
              (comm.RPCProducer, mq.MQRPCProducer),
              (comm.EventDrivenConsumer, mq.MQEventDrivenConsumer)])
+    def test_bad_inst(self):
+        def tst(cls):
+            with self.assertRaises(comm.ConfigurationError):
+                cls(**self.fail_config)
+        map(tst, [comm.AsynchronProducer, comm.RPCProducer,
+                  comm.EventDrivenConsumer])
 
 class MQTestSuite(unittest.TestSuite):
     def __init__(self):
         unittest.TestSuite.__init__(
             self, map(MQTest, ['test_inst',
-                               ]))
+                               'test_bad_inst']))
 
 if __name__ == '__main__':
     alltests = unittest.TestSuite([MQTestSuite(),
