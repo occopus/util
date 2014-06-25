@@ -27,7 +27,7 @@ class MultiBackend(object):
         except KeyError:
             raise ConfigurationError('Missing protocol specification')
         else:
-            return cls.backends[protocol](*args, **kwargs)
+            return object.__new__(cls.backends[protocol], *args, **kwargs)
 
 class AsynchronProducer(MultiBackend):
     def __init__(self):
