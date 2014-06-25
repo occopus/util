@@ -41,7 +41,7 @@ class RPCProducer(MultiBackend):
     def push_message(self, message, **kwargs):
         raise NotImplementedError
 
-class EventDriveConsumer(MultiBackend):
+class EventDrivenConsumer(MultiBackend):
     def __init__(self):
         pass
     def start_consuming(self, processor, **kwargs):
