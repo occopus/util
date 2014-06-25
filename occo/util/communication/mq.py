@@ -7,7 +7,7 @@
 __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
            'MQEventDriverConsumer']
 
-import occo.util.communication as com
+import comm
 
 PROTOCOL_ID='amqp'
 
@@ -15,17 +15,17 @@ class MQHandler(object):
     def __init__(self, **config):
         pass
 
-@com.register(com.AsynchronProducer, PROTOCOL_ID)
-class MQAsynchronProducer(MQHandler, com.AsynchronProducer):
+@comm.register(comm.AsynchronProducer, PROTOCOL_ID)
+class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
     def __init__(self, **config):
         pass
 
-@com.register(com.RPCProducer, PROTOCOL_ID)
-class MQRPCProducer(MQHandler, com.RPCProducer):
+@comm.register(comm.RPCProducer, PROTOCOL_ID)
+class MQRPCProducer(MQHandler, comm.RPCProducer):
     def __init__(self, **config):
         pass
 
-@com.register(com.EventDrivenConsumer, PROTOCOL_ID)
-class MQEventDrivenConsumer(MQHandler, com.EventDrivenConsumer):
+@comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
+class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
     def __init__(self, **config):
         pass
