@@ -23,12 +23,14 @@ register = RegisteredBackend
 
 class MultiBackend(object):
     def __new__(cls, *args, **kwargs):
-        try:
-            protocol = kwargs['protocol']
-        except KeyError:
+        if not 'protocol' in kwargs:
             raise ConfigurationError('Missing protocol specification')
-        else:
-            return object.__new__(cls.backends[protocol], *args, **kwargs)
+
+        protocol = kwargs['protocol']
+        if not protocol in cls.backends:
+            raise ConfigurationError(
+                'The backend specified (%s) does not exist'%protocol)
+        return object.__new__(cls.backends[protocol], *args, **kwargs)
 
 class AsynchronProducer(MultiBackend):
     def __init__(self):
