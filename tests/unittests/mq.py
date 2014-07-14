@@ -8,8 +8,10 @@ import unittest
 from common import *
 import occo.util.communication as comm
 import occo.util.communication.mq as mq
+import occo.util.config as config
+import itertools as it
 
-class MQTest(unittest.TestCase):
+class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
         self.test_config = dict(protocol='amqp', extra='something')
         self.fail_config = dict(extra='something')
@@ -26,11 +28,24 @@ class MQTest(unittest.TestCase):
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
 
+class MQConnectionTest(unittest.TestCase):
+    def setUp(self):
+        with open('comm_test_cfg.yaml') as cfg:
+            self.config = config.DefaultYAMLConfig(cfg)
+    def test_rpc(self):
+        pass
+    def test_async(self):
+        pass
+
 class MQTestSuite(unittest.TestSuite):
     def __init__(self):
         unittest.TestSuite.__init__(
-            self, map(MQTest, ['test_inst',
-                               'test_bad_inst']))
+            self, it.chain(
+                map(MQBootstrapTest, ['test_inst',
+                                      'test_bad_inst']),
+                map(MQConnectionTest, ['test_rpc',
+                                       'test_async'])
+            ))
 
 if __name__ == '__main__':
     alltests = unittest.TestSuite([MQTestSuite(),
