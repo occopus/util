@@ -1,0 +1,19 @@
+default_mqconfig: &MQCFG
+    protocol: amqp
+    host: http://192.168.152.184/
+    vhost: test
+    exhange: ''
+    routing_key: ''
+    user: test
+    pass: test
+async_queue: &ASYNC_Q
+    <<: *MQCFG
+    routing_key: unittest_queue_async
+rpc_queue: &RPC_Q
+    <<: *MQCFG
+    routing_key: unittest_queue_rpc
+endpoints:
+    producer_async: *ASYNC_Q
+    producer_rpc: *RPC_Q
+    consumer_async: *ASYNC_Q
+    consumer_rpc: *RPC_Q
