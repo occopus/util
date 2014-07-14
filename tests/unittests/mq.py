@@ -57,17 +57,5 @@ class MQConnectionTest(unittest.TestCase):
             self.assertEqual(msg, MSG)
         c.start_consuming(self.consumer_core)
 
-class MQTestSuite(unittest.TestSuite):
-    def __init__(self):
-        unittest.TestSuite.__init__(
-            self, it.chain(
-                map(MQBootstrapTest, ['test_inst',
-                                      'test_bad_inst']),
-                map(MQConnectionTest, ['test_rpc',
-                                       'test_async'])
-            ))
-
 if __name__ == '__main__':
-    alltests = unittest.TestSuite([MQTestSuite(),
-                                   ])
     unittest.main()
