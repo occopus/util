@@ -49,7 +49,13 @@ class MQConnectionTest(unittest.TestCase):
         self.assertEqual(p.push_message(MSG), MSG)
     @unittest.skip('not finished test case')
     def test_async(self):
-        pass
+        MSG='test message abc'
+        p = comm.RPCProducer(**self.config.endpoints['producer_async'])
+        c = comm.EventDrivenConsumer(**self.config.endpoints['consumer_async'])
+        p.push_message(MSG)
+        def consumer_core(self, msg, *args, **kwargs):
+            self.assertEqual(msg, MSG)
+        c.start_consuming(self.consumer_core)
 
 class MQTestSuite(unittest.TestSuite):
     def __init__(self):
