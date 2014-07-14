@@ -32,8 +32,22 @@ class MQConnectionTest(unittest.TestCase):
     def setUp(self):
         with open('comm_test_cfg.yaml') as cfg:
             self.config = config.DefaultYAMLConfig(cfg)
+    def test_rpc_init_prod(self):
+        p = comm.RPCProducer(**self.config.endpoints['producer_rpc'])
+    def test_async_init_prod(self):
+        p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
+    def test_init_consumer(self):
+        c = comm.EventDrivenConsumer(**self.config.endpoints['consumer_rpc'])
+    @unittest.skip('not finished test case')
     def test_rpc(self):
-        pass
+        MSG='test message abc'
+        p = comm.RPCProducer(**self.config.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer(**self.config.endpoints['consumer_rpc'])
+        def consumer_core(self, msg, *args, **kwargs):
+            return msg
+        c.start_consuming(consumer_core)
+        self.assertEqual(p.push_message(MSG), MSG)
+    @unittest.skip('not finished test case')
     def test_async(self):
         pass
 
