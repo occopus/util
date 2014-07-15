@@ -60,9 +60,10 @@ class MQConnectionTest(unittest.TestCase):
                                      **self.config.endpoints['consumer_rpc'])
         t = threading.Thread(target=c)
         t.start()
-        self.assertEqual(p.push_message(MSG), MSG)
+        retval = p.push_message(MSG)
         e.set()
         t.join()
+        self.assertEqual(retval, MSG)
     def test_async(self):
         MSG='test message abc'
         e = threading.Event()
