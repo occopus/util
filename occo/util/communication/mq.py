@@ -73,7 +73,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         if self.correlation_id == props.correlation_id:
             self.response = body
 
-    def push_message(self, msg, routing_key, **kwargs):
+    def push_message(self, msg, routing_key=None, **kwargs):
         if self.correlation_id != None:
             raise RuntimeError('pika is not thread safe.')
 
