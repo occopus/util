@@ -70,7 +70,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         self.correlation_id = None
 
     def on_reponse(self, ch, method, props, body):
-        if self.correlation_id = props.correlation_id:
+        if self.correlation_id == props.correlation_id:
             self.response = body
 
     def push_msg(self, msg, routing_key, **kwargs):
