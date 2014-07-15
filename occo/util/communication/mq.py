@@ -96,12 +96,14 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
-    def __init__(self, processor, pargs=[], pkwargs={}, **config):
+    def __init__(self, processor, pargs=[], pkwargs={},
+                 cancel_event=None, **config):
         super(MQEventDrivenConsumer, self).__init__(**config)
         comm.EventDrivenConsumer.__init__(
             self, processor=processor, pargs=pargs, pkwargs=pkwargs)
         if not self.queue:
             raise ValueError('Queue name is mandatory')
+        self.cancel_event = cancel_event
         self.declare_queue(self.queue)
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(self.callback, queue=self.queue)
@@ -110,7 +112,12 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         self._call_processor(body)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    @property
+    def cancelled(self):
+        return self.cancel_event and self.cancel_event.is_set()
+
     def start_consuming(self):
-        return self.channel.start_consuming()
+        while not self.cancelled:
+            self.connection.process_data_events()
     def __call__(self):
         return self.start_consuming()
