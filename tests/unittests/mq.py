@@ -77,5 +77,5 @@ class MQConnectionTest(unittest.TestCase):
 
 if __name__ == '__main__':
     import os
-    print os.getpid()
+    print 'PID: %d'%os.getpid()
     unittest.main()
