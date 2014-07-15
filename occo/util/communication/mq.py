@@ -33,7 +33,7 @@ class MQHandler(object):
             ValueError('publish_message: Routing key is mandatory'))
 
     def declare_queue(self, queue_name, **kwargs):
-        self.channel.queue_declare(routing_key, **kwargs)
+        self.channel.queue_declare(queue_name, **kwargs)
     def declare_response_queue(self, **kwargs):
         response = self.channel.queue_declare(exclusive=True, **kwargs)
         return response.method.queue
