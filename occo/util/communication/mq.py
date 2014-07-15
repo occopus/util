@@ -44,11 +44,10 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
     def __init__(self, **config):
         super(MQAsynchronProducer,self).__init__(**config)
 
-    def push_msg(self, msg, routing_key, **kwargs):
-#TODO: better solution needed for queue_declare(wrong position)
-        self.channel.queue_declare(routing_key)
-
-        self.channel.basic_publish(exchange='', routing_key=routing_key,body=msg)
+    def push_msg(self, msg, routing_key=None, **kwargs):
+        rkey = self.effective_routing_key(routing_key)
+        self.declare_queue(rkey)
+        self.publish_message(msg, routing_key=rkey, **kwargs)
 
 @comm.register(comm.RPCProducer, PROTOCOL_ID)
 class MQRPCProducer(MQHandler, comm.RPCProducer):
