@@ -1,6 +1,6 @@
 default_mqconfig: &MQCFG
     protocol: amqp
-    host: http://192.168.152.184/
+    host: 192.168.152.184
     vhost: test
     exhange: ''
     routing_key: ''
