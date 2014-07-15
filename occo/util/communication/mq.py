@@ -13,11 +13,15 @@ PROTOCOL_ID='amqp'
 
 class MQHandler(object):
     def __init__(self, **config):
-        self.credentials = pika.PlainCredentials(config['user'],config['password'])
-        self.connectionParameters = pika.ConnectionParameters(config['host'],config['port'],
-config['virtual_host'], self.credentials)
-        self.connection = pika.BlockingConnection(connectionParameters)
-        self.channel=self.connection.channel()
+        self.credentials = pika.PlainCredentials(config['user'],
+                                                 config['password'])
+        connection_parameters = pika.ConnectionParameters(
+            config['host'], config['port'],
+            config['virtual_host'], self.credentials)
+        self.connection = pika.BlockingConnection(connection_parameters)
+        self.channel = self.connection.channel()
+        self.default_exchange = config.get('exchange', '')
+        self.default_routing_key = config.get('routing_key', None)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
