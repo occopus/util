@@ -49,25 +49,30 @@ class MQConnectionTest(unittest.TestCase):
         c = comm.EventDrivenConsumer(None, **self.config.endpoints['consumer_rpc'])
     def test_rpc(self):
         MSG='test message abc'
+        e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             return msg
         p = comm.RPCProducer(**self.config.endpoints['producer_rpc'])
-        c = comm.EventDrivenConsumer(consumer_core,
+        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **self.config.endpoints['consumer_rpc'])
         t = threading.Thread(target=c)
         t.start()
         self.assertEqual(p.push_message(MSG), MSG)
+        e.set()
         t.join()
     def test_async(self):
         MSG='test message abc'
+        e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             self.assertEqual(msg, MSG)
+            e.set()
         p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
-        c = comm.EventDrivenConsumer(consumer_core,
+        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **self.config.endpoints['consumer_async'])
         t = threading.Thread(target=c)
         t.start()
         p.push_message(MSG)
+        e.wait()
         t.join()
 
 if __name__ == '__main__':
