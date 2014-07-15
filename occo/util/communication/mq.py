@@ -32,12 +32,16 @@ class MQHandler(object):
 
     def decalre_queue(self, queue_name, **kwargs):
         self.channel.queue_declare(routing_key, **kwargs)
-    def publish_message(self, message,
-                        routing_key=None, exchange=None, **kwargs):
+    def declare_response_queue(self, **kwargs):
+        response = self.channel.queue_declare(exclusive=True, **kwargs)
+        return response.method.queue
+    def publish_message(self, msg, routing_key=None, exchange=None, **kwargs):
         self.channel.basic_publish(
             exchange=self.effective_exchange(exchange),
             routing_key=self.effective_routing_key(routing_key),
-            body=message, **kwargs)
+            body=msg,
+            properties=properties,
+            **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
@@ -52,36 +56,39 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
 @comm.register(comm.RPCProducer, PROTOCOL_ID)
 class MQRPCProducer(MQHandler, comm.RPCProducer):
     def __init__(self, **config):
-
         super(MQRPCProducer,self).__init__(**config)
+	self.callback_queue = self.declare_response_queue()
+        self.__reset()
 
-	returnValue = self.channel.queue_declare(exclusive=True)
-	self.callback_queue = returnValue.method.queue
+    def __reset(self):
+        self.response = None
+        self.correlation_id = None
 
-	self.channel.basic_consume(self.on_response, no_ack=True, queue=self.callback_queue)
-
-
-    def on_response(self, ch, method, props, body):
-	if self.corr_id == props.correlation_id:
-	    self.response = body
-
+    def on_reponse(self, ch, method, props, body):
+        if self.correlation_id = props.correlation_id:
+            self.response = body
 
     def push_msg(self, msg, routing_key, **kwargs):
+        if self.correlation_id != None:
+            raise RuntimeError('pika is not thread safe.')
 
-	self.response = None
-	self.corr_id =uuid.uuid4())
+	self.correlation_id = str(uuid.uuid4())
 
-#TODO: better solution needed for queue_declare (wrong position)
-        self.channel.queue_declare(routing_key)
-
-	self.channel.basic_publish(exchange='', routing_key=routing_key,
-properties=pika.BasicProperties(reply_to = self.callback_queue, correlation_id = self.corr_id), body = msg)
+        rkey = self.effective_routing_key(routing_key)
+        self.declare_queue(rkey)
+        self.publish_message(msg, routing_key=rkey,
+                             properties=pika.BasicProperties(
+                                 reply_to = reply_target.callback_queue,
+                                 correlation_id = reply_target.corr_id),
+                             **kwargs)
 	
+	self.channel.basic_consume(
+            on_response, no_ack=True, queue=self.callback_queue)
 	while self.response is None:
 	    self.connection.process_data_events()
-	return self.response
-
-	pass
+	response = self.response
+        self.__reset()
+        return response
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
