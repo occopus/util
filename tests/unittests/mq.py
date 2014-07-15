@@ -14,6 +14,9 @@ import threading
 
 CFG_FILE='comm_test_cfg.yaml'
 
+def dummy(ch, method, *args, **kwargs):
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
 class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
         with open(CFG_FILE) as cfg:
@@ -28,7 +31,7 @@ class MQBootstrapTest(unittest.TestCase):
     def test_inst_consumer(self):
         self.assertEqual(
             comm.EventDrivenConsumer(
-                None, None, None, **self.test_config).__class__,
+                dummy, **self.test_config).__class__,
             mq.MQEventDrivenConsumer)
     def test_bad_inst(self):
         def tst(cls):
@@ -46,7 +49,7 @@ class MQConnectionTest(unittest.TestCase):
     def test_async_init_prod(self):
         p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
     def test_init_consumer(self):
-        c = comm.EventDrivenConsumer(None, **self.config.endpoints['consumer_rpc'])
+        c = comm.EventDrivenConsumer(dummy, **self.config.endpoints['consumer_rpc'])
     def test_rpc(self):
         MSG='test message abc'
         e = threading.Event()
