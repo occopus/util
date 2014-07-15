@@ -57,7 +57,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
 class MQRPCProducer(MQHandler, comm.RPCProducer):
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
-	self.callback_queue = self.declare_response_queue()
+        self.callback_queue = self.declare_response_queue()
         self.__reset()
 
     def __reset(self):
@@ -72,7 +72,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         if self.correlation_id != None:
             raise RuntimeError('pika is not thread safe.')
 
-	self.correlation_id = str(uuid.uuid4())
+        self.correlation_id = str(uuid.uuid4())
 
         rkey = self.effective_routing_key(routing_key)
         self.declare_queue(rkey)
@@ -81,12 +81,12 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
                                  reply_to = reply_target.callback_queue,
                                  correlation_id = reply_target.corr_id),
                              **kwargs)
-	
-	self.channel.basic_consume(
+
+        self.channel.basic_consume(
             on_response, no_ack=True, queue=self.callback_queue)
-	while self.response is None:
-	    self.connection.process_data_events()
-	response = self.response
+        while self.response is None:
+            self.connection.process_data_events()
+        response = self.response
         self.__reset()
         return response
 
