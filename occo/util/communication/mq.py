@@ -53,7 +53,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
     def __init__(self, **config):
         super(MQAsynchronProducer,self).__init__(**config)
 
-    def push_msg(self, msg, routing_key=None, **kwargs):
+    def push_message(self, msg, routing_key=None, **kwargs):
         rkey = self.effective_routing_key(routing_key)
         self.declare_queue(rkey)
         self.publish_message(msg, routing_key=rkey, **kwargs)
@@ -73,7 +73,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         if self.correlation_id == props.correlation_id:
             self.response = body
 
-    def push_msg(self, msg, routing_key, **kwargs):
+    def push_message(self, msg, routing_key, **kwargs):
         if self.correlation_id != None:
             raise RuntimeError('pika is not thread safe.')
 
