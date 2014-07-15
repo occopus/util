@@ -8,6 +8,7 @@ __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
            'MQEventDrivenConsumer']
 
 import comm
+import occo.util as util
 
 PROTOCOL_ID='amqp'
 
@@ -22,6 +23,21 @@ class MQHandler(object):
         self.channel = self.connection.channel()
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
+    def effective_exchange(self, override=None):
+        return util.coalesce(override, self.default_exchange, '')
+    def effective_routing_key(self, override=None):
+        return util.coalesce(
+            override, self.default_routing_key,
+            ValueError('publish_message: Routing key is mandatory'))
+
+    def decalre_queue(self, queue_name, **kwargs):
+        self.channel.queue_declare(routing_key, **kwargs)
+    def publish_message(self, message,
+                        routing_key=None, exchange=None, **kwargs):
+        self.channel.basic_publish(
+            exchange=self.effective_exchange(exchange),
+            routing_key=self.effective_routing_key(routing_key),
+            body=message, **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
