@@ -106,4 +106,4 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
             ch.basic_ack(delivery_tag=method.delivery_tag)
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(callback, queue=self.queue)
-        self.start_consuming()
+        self.channel.start_consuming()
