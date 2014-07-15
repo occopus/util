@@ -21,6 +21,7 @@ class MQHandler(object):
             config['virtual_host'], self.credentials)
         self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
+        self.queue = config.get('queue', None)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
     def effective_exchange(self, override=None):
@@ -42,6 +43,9 @@ class MQHandler(object):
             body=msg,
             properties=properties,
             **kwargs)
+    def setup_consumer(callback, queue_name, **kwargs):
+        self.channel.basic_consume(callback, queue=queue_name,
+                                   **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
@@ -93,4 +97,14 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
     def __init__(self, **config):
-        pass
+        super(MQEventDrivenConsumer, self).__init__(**config)
+        if not self.queue:
+            raise ValueError('Queue name is mandatory')
+    def start_consuming(self, processor, *args, **kwargs):
+        self.declare_queue(self.queue)
+        def callback(ch, method, properties, body):
+            processor(body, *args, **kwargs)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        self.channel.basic_qos(prefetch_count=1)
+        self.setup_consumer(callback, queue=self.queue)
+        self.start_consuming()
