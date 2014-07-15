@@ -11,6 +11,9 @@ import comm
 import occo.util as util
 import pika
 import uuid
+import logging
+
+log = logging.getLogger()
 
 PROTOCOL_ID='amqp'
 
@@ -90,8 +93,10 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 
             self.setup_consumer(self.on_response, no_ack=True,
                                 queue=self.callback_queue)
+            log.debug('Waiting for response')
             while self.response is None:
                 self.connection.process_data_events()
+            log.debug('Received response: %r', self.response)
             return self.response
         finally:
             self.__reset()

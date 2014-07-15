@@ -22,3 +22,32 @@ endpoints:
     consumer_rpc:
         <<: *RPC_Q
         queue: unittest_queue_rpc
+logging:
+    version: 1
+    root:
+        level: DEBUG
+        handlers: [console]
+    formatters:
+        simpleFormater:
+            format: "%(asctime)s\t%(levelname)s\t%(processName)s\t%(message)s"
+            datefmt: '%Y-%m-%d %H:%M:%S'
+
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: simpleFormater
+            level: DEBUG
+            stream: ext://sys.stdout
+        file:
+            class : logging.FileHandler
+            formatter: simpleFormater
+            level: WARNING
+            filename: rabbit.log
+
+    loggers:
+        clogger:
+            level: DEBUG
+            handlers: [console]
+        flogger:
+            level: WARNING
+            handlers: [file]

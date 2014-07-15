@@ -11,16 +11,22 @@ import occo.util.communication.mq as mq
 import occo.util.config as config
 import itertools as it
 import threading
+import logging
+import logging.config
 
 CFG_FILE='comm_test_cfg.yaml'
+with open(CFG_FILE) as cfg:
+    cfg = config.DefaultYAMLConfig(cfg)
 
-def dummy(ch, method, *args, **kwargs):
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+logging.config.dictConfig(cfg.logging)
+
+log = logging.getLogger()
+
+def dummy(*args, **kwargs):
+    pass
 
 class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
-        with open(CFG_FILE) as cfg:
-            cfg = config.DefaultYAMLConfig(cfg)
         self.test_config = cfg.default_mqconfig
         self.fail_config = dict(extra='something')
     def test_inst(self):
@@ -41,38 +47,37 @@ class MQBootstrapTest(unittest.TestCase):
                   comm.EventDrivenConsumer])
 
 class MQConnectionTest(unittest.TestCase):
-    def setUp(self):
-        with open('comm_test_cfg.yaml') as cfg:
-            self.config = config.DefaultYAMLConfig(cfg)
     def test_rpc_init_prod(self):
-        p = comm.RPCProducer(**self.config.endpoints['producer_rpc'])
+        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
     def test_async_init_prod(self):
-        p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
+        p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
     def test_init_consumer(self):
-        c = comm.EventDrivenConsumer(dummy, **self.config.endpoints['consumer_rpc'])
+        c = comm.EventDrivenConsumer(dummy, **cfg.endpoints['consumer_rpc'])
     def test_rpc(self):
         MSG='test message abc'
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             return msg
-        p = comm.RPCProducer(**self.config.endpoints['producer_rpc'])
+        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
-                                     **self.config.endpoints['consumer_rpc'])
+                                     **cfg.endpoints['consumer_rpc'])
         t = threading.Thread(target=c)
         t.start()
+        log.debug('sendingrpc message')
         retval = p.push_message(MSG)
         e.set()
         t.join()
         self.assertEqual(retval, MSG)
+        log.debug('sent, received rpc')
     def test_async(self):
         MSG='test message abc'
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             self.assertEqual(msg, MSG)
             e.set()
-        p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
+        p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
-                                     **self.config.endpoints['consumer_async'])
+                                     **cfg.endpoints['consumer_async'])
         t = threading.Thread(target=c)
         t.start()
         p.push_message(MSG)
@@ -81,5 +86,5 @@ class MQConnectionTest(unittest.TestCase):
 
 if __name__ == '__main__':
     import os
-    print 'PID: %d'%os.getpid()
+    log.info('PID: %d', os.getpid())
     unittest.main()
