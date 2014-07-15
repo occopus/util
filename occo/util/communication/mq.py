@@ -10,6 +10,7 @@ __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
 import comm
 import occo.util as util
 import pika
+import uuid
 
 PROTOCOL_ID='amqp'
 
