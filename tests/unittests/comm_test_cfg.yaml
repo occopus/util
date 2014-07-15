@@ -16,5 +16,9 @@ rpc_queue: &RPC_Q
 endpoints:
     producer_async: *ASYNC_Q
     producer_rpc: *RPC_Q
-    consumer_async: *ASYNC_Q
-    consumer_rpc: *RPC_Q
+    consumer_async:
+        <<: *ASYNC_Q
+        queue: unittest_queue_async
+    consumer_rpc:
+        <<: *RPC_Q
+        queue: unittest_queue_rpc
