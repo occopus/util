@@ -77,22 +77,21 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
             raise RuntimeError('pika is not thread safe.')
 
         self.correlation_id = str(uuid.uuid4())
+        try:
+            rkey = self.effective_routing_key(routing_key)
+            self.declare_queue(rkey)
+            self.publish_message(msg, routing_key=rkey,
+                                 properties=pika.BasicProperties(
+                                     reply_to = reply_target.callback_queue,
+                                     correlation_id = reply_target.corr_id),
+                                 **kwargs)
 
-        rkey = self.effective_routing_key(routing_key)
-        self.declare_queue(rkey)
-        self.publish_message(msg, routing_key=rkey,
-                             properties=pika.BasicProperties(
-                                 reply_to = reply_target.callback_queue,
-                                 correlation_id = reply_target.corr_id),
-                             **kwargs)
-
-        self.channel.basic_consume(
-            on_response, no_ack=True, queue=self.callback_queue)
-        while self.response is None:
-            self.connection.process_data_events()
-        response = self.response
-        self.__reset()
-        return response
+            self.setup_consumer(on_response, no_ack=True, queue=self.callback_queue)
+            while self.response is None:
+                self.connection.process_data_events()
+            return self.response
+        finally:
+            self.__reset()
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
