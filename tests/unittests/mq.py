@@ -24,8 +24,12 @@ class MQBootstrapTest(unittest.TestCase):
         map(lambda (cls1, cls2): \
                 self.assertEqual(cls1(**self.test_config).__class__, cls2),
             [(comm.AsynchronProducer, mq.MQAsynchronProducer),
-             (comm.RPCProducer, mq.MQRPCProducer),
-             (comm.EventDrivenConsumer, mq.MQEventDrivenConsumer)])
+             (comm.RPCProducer, mq.MQRPCProducer)])
+    def test_inst_consumer(self):
+        self.assertEqual(
+            comm.EventDrivenConsumer(
+                None, None, None, **self.test_config).__class__,
+            mq.MQEventDrivenConsumer)
     def test_bad_inst(self):
         def tst(cls):
             with self.assertRaises(comm.ConfigurationError):
@@ -42,7 +46,7 @@ class MQConnectionTest(unittest.TestCase):
     def test_async_init_prod(self):
         p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
     def test_init_consumer(self):
-        c = comm.EventDrivenConsumer(**self.config.endpoints['consumer_rpc'])
+        c = comm.EventDrivenConsumer(None, **self.config.endpoints['consumer_rpc'])
     @unittest.skip('not finished test case')
     def test_rpc(self):
         MSG='test message abc'
