@@ -19,7 +19,7 @@ class MQHandler(object):
                                                  config['password'])
         connection_parameters = pika.ConnectionParameters(
             config['host'], config.get('port', 5672),
-            config['virtual_host'], self.credentials)
+            config['vhost'], self.credentials)
         self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
         self.queue = config.get('queue', None)
