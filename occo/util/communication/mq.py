@@ -44,8 +44,8 @@ class MQHandler(object):
             routing_key=self.effective_routing_key(routing_key),
             body=msg,
             **kwargs)
-    def setup_consumer(callback, queue_name, **kwargs):
-        self.channel.basic_consume(callback, queue=queue_name,
+    def setup_consumer(self, callback, queue, **kwargs):
+        self.channel.basic_consume(callback, queue=queue,
                                    **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
