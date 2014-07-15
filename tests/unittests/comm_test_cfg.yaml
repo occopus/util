@@ -4,6 +4,7 @@ default_mqconfig: &MQCFG
     vhost: test
     exhange: ''
     routing_key: ''
+    queue: test
     user: test
     password: test
 async_queue: &ASYNC_Q
