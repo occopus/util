@@ -62,7 +62,7 @@ class MQConnectionTest(unittest.TestCase):
         MSG='test message abc'
         def consumer_core(self, msg, *args, **kwargs):
             self.assertEqual(msg, MSG)
-        p = comm.RPCProducer(**self.config.endpoints['producer_async'])
+        p = comm.AsynchronProducer(**self.config.endpoints['producer_async'])
         c = comm.EventDrivenConsumer(consumer_core,
                                      **self.config.endpoints['consumer_async'])
         t = threading.Thread(target=c)
