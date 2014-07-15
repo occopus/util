@@ -37,11 +37,11 @@ class MQHandler(object):
         response = self.channel.queue_declare(exclusive=True, **kwargs)
         return response.method.queue
     def publish_message(self, msg, routing_key=None, exchange=None, **kwargs):
+
         self.channel.basic_publish(
             exchange=self.effective_exchange(exchange),
             routing_key=self.effective_routing_key(routing_key),
             body=msg,
-            properties=properties,
             **kwargs)
     def setup_consumer(callback, queue_name, **kwargs):
         self.channel.basic_consume(callback, queue=queue_name,
