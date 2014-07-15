@@ -70,7 +70,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         self.response = None
         self.correlation_id = None
 
-    def on_reponse(self, ch, method, props, body):
+    def on_response(self, ch, method, props, body):
         if self.correlation_id == props.correlation_id:
             self.response = body
 
@@ -84,11 +84,12 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
             self.declare_queue(rkey)
             self.publish_message(msg, routing_key=rkey,
                                  properties=pika.BasicProperties(
-                                     reply_to = reply_target.callback_queue,
-                                     correlation_id = reply_target.corr_id),
+                                     reply_to = self.callback_queue,
+                                     correlation_id = self.correlation_id),
                                  **kwargs)
 
-            self.setup_consumer(on_response, no_ack=True, queue=self.callback_queue)
+            self.setup_consumer(self.on_response, no_ack=True,
+                                queue=self.callback_queue)
             while self.response is None:
                 self.connection.process_data_events()
             return self.response
