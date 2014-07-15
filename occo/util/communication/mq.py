@@ -32,7 +32,7 @@ class MQHandler(object):
             override, self.default_routing_key,
             ValueError('publish_message: Routing key is mandatory'))
 
-    def decalre_queue(self, queue_name, **kwargs):
+    def declare_queue(self, queue_name, **kwargs):
         self.channel.queue_declare(routing_key, **kwargs)
     def declare_response_queue(self, **kwargs):
         response = self.channel.queue_declare(exclusive=True, **kwargs)
