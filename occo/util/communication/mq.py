@@ -110,8 +110,14 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(self.callback, queue=self.queue)
 
-    def callback(self, ch, method, properties, body):
-        self._call_processor(body)
+    def callback(self, ch, method, props, body):
+        retval = self._call_processor(body)
+        if props.reply_to:
+            self.publish_message(str(retval),
+                                 exchange='',
+                                 routing_key=props.reply_to,
+                                 properties=pika.BasicProperties(
+                                     correlation_id=props.correlation_id))
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     @property
