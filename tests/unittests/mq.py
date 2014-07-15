@@ -10,10 +10,15 @@ import occo.util.communication as comm
 import occo.util.communication.mq as mq
 import occo.util.config as config
 import itertools as it
+import threading
+
+CFG_FILE='comm_test_cfg.yaml'
 
 class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
-        self.test_config = dict(protocol='amqp', extra='something')
+        with open(CFG_FILE) as cfg:
+            cfg = config.DefaultYAMLConfig(cfg)
+        self.test_config = cfg.default_mqconfig
         self.fail_config = dict(extra='something')
     def test_inst(self):
         map(lambda (cls1, cls2): \
@@ -50,12 +55,15 @@ class MQConnectionTest(unittest.TestCase):
     @unittest.skip('not finished test case')
     def test_async(self):
         MSG='test message abc'
-        p = comm.RPCProducer(**self.config.endpoints['producer_async'])
-        c = comm.EventDrivenConsumer(**self.config.endpoints['consumer_async'])
-        p.push_message(MSG)
         def consumer_core(self, msg, *args, **kwargs):
             self.assertEqual(msg, MSG)
-        c.start_consuming(self.consumer_core)
+        p = comm.RPCProducer(**self.config.endpoints['producer_async'])
+        c = comm.EventDrivenConsumer(consumer_core, pkwargs=dict(),
+                                     **self.config.endpoints['consumer_async'])
+        t = threading.Thread(target=c)
+        t.start()
+        p.push_message(MSG)
+        t.join()
 
 if __name__ == '__main__':
     unittest.main()

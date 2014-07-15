@@ -5,7 +5,7 @@ default_mqconfig: &MQCFG
     exhange: ''
     routing_key: ''
     user: test
-    pass: test
+    password: test
 async_queue: &ASYNC_Q
     <<: *MQCFG
     routing_key: unittest_queue_async
