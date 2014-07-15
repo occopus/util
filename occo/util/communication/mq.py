@@ -99,11 +99,14 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         super(MQEventDrivenConsumer, self).__init__(**config)
         if not self.queue:
             raise ValueError('Queue name is mandatory')
-    def start_consuming(self, processor, *args, **kwargs):
+    def setup_consuming(self, processor, *args, **kwargs):
         self.declare_queue(self.queue)
         def callback(ch, method, properties, body):
             processor(body, *args, **kwargs)
             ch.basic_ack(delivery_tag=method.delivery_tag)
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(callback, queue=self.queue)
-        self.channel.start_consuming()
+    def start_consuming(self):
+        return self.channel.start_consuming()
+    def __call__(self):
+        return self.start_consuming()

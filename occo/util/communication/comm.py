@@ -104,7 +104,7 @@ class EventDrivenConsumer(MultiBackend):
     Sub-classes may also implement the processor function itself, so they can
     act as self-contained services.
     """
-    def start_consuming(self, processor, *args, **kwargs):
+    def setup_consuming(self, processor, *args, **kwargs):
         """Register a message processor function.
 
         The processor function will be called upon message arrival, with the
@@ -116,4 +116,7 @@ class EventDrivenConsumer(MultiBackend):
             - **kwargs: Specified upon registering the processor, these
                         are passed through to the processor function.
         """
+        raise NotImplementedError
+    def start_consuming(self):
+        """Start consuming messages in an infinite loop."""
         raise NotImplementedError
