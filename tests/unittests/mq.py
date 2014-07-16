@@ -50,11 +50,14 @@ class MQConnectionTest(unittest.TestCase):
     def setUp(self):
         self.data = None
     def test_rpc_init_prod(self):
-        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
+        with comm.RPCProducer(**cfg.endpoints['producer_rpc']):
+            pass
     def test_async_init_prod(self):
-        p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
+        with comm.AsynchronProducer(**cfg.endpoints['producer_async']):
+            pass
     def test_init_consumer(self):
-        c = comm.EventDrivenConsumer(dummy, **cfg.endpoints['consumer_rpc'])
+        with comm.EventDrivenConsumer(dummy, **cfg.endpoints['consumer_rpc']):
+            pass
     def i_test_rpc(self):
         MSG='test message abc'
         e = threading.Event()
@@ -64,20 +67,21 @@ class MQConnectionTest(unittest.TestCase):
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
-        log.debug('RPC Creating thread object')
-        t = threading.Thread(target=c)
-        log.debug('RPC Starting thread')
-        t.start()
-        log.debug('RPC thread started, sending RPC message and '
-                  'waiting for response')
-        retval = p.push_message(MSG)
-        log.debug('Response arrived')
-        self.assertEqual(retval, MSG)
-        log.debug('Setting cancel event')
-        e.set()
-        log.debug('Waiting for RPC Consumer to exit')
-        t.join()
-        log.debug('Consumer exited')
+        with p, c:
+            log.debug('RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('RPC Starting thread')
+            t.start()
+            log.debug('RPC thread started, sending RPC message and '
+                      'waiting for response')
+            retval = p.push_message(MSG)
+            log.debug('Response arrived')
+            self.assertEqual(retval, MSG)
+            log.debug('Setting cancel event')
+            e.set()
+            log.debug('Waiting for RPC Consumer to exit')
+            t.join()
+            log.debug('Consumer exited')
     @unittest.skip('')
     def test_rpc(self):
         log.debug('Starting test RPC')
@@ -98,21 +102,22 @@ class MQConnectionTest(unittest.TestCase):
         p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_async'])
-        log.debug('Async Creating thread object')
-        t = threading.Thread(target=c)
-        log.debug('Async Starting thread')
-        t.start()
-        log.debug('Async thread started, sending Async message')
-        p.push_message(MSG)
-        log.debug('Waiting Async arrival')
-        r.wait()
-        log.debug('Async message has arrived')
-        self.assertEqual(self.data, MSG)
-        log.debug('Setting Async cancel event')
-        e.set()
-        log.debug('Waiting for Async Consumer to exit')
-        t.join()
-        log.debug('Consumer exited')
+        with p, c:
+            log.debug('Async Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('Async Starting thread')
+            t.start()
+            log.debug('Async thread started, sending Async message')
+            p.push_message(MSG)
+            log.debug('Waiting Async arrival')
+            r.wait()
+            log.debug('Async message has arrived')
+            self.assertEqual(self.data, MSG)
+            log.debug('Setting Async cancel event')
+            e.set()
+            log.debug('Waiting for Async Consumer to exit')
+            t.join()
+            log.debug('Consumer exited')
 
 if __name__ == '__main__':
     import os

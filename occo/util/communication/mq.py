@@ -21,14 +21,19 @@ class MQHandler(object):
     def __init__(self, **config):
         self.credentials = pika.PlainCredentials(config['user'],
                                                  config['password'])
-        connection_parameters = pika.ConnectionParameters(
+        self.connection_parameters = pika.ConnectionParameters(
             config['host'], config.get('port', 5672),
             config['vhost'], self.credentials)
-        self.connection = pika.BlockingConnection(connection_parameters)
-        self.channel = self.connection.channel()
         self.queue = config.get('queue', None)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
+    def __enter__(self):
+        self.connection = pika.BlockingConnection(self.connection_parameters)
+        self.channel = self.connection.channel()
+        return self
+    def __exit__(self, type, value, tb):
+        self.channel.close()
+
     def effective_exchange(self, override=None):
         return util.coalesce(override, self.default_exchange, '')
     def effective_routing_key(self, override=None):
@@ -66,8 +71,10 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
 class MQRPCProducer(MQHandler, comm.RPCProducer):
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
-        self.callback_queue = self.declare_response_queue()
         self.__reset()
+    def __enter__(self):
+        super(MQRPCProducer, self).__enter__()
+        self.callback_queue = self.declare_response_queue()
 
     def __reset(self):
         self.response = None
@@ -113,6 +120,8 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         if not self.queue:
             raise ValueError('Queue name is mandatory')
         self.cancel_event = cancel_event
+    def __enter__(self):
+        super(MQEventDrivenConsumer, self).__enter__()
         self.declare_queue(self.queue)
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(self.callback, queue=self.queue)
