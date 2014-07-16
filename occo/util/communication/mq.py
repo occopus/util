@@ -132,5 +132,9 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
     def start_consuming(self):
         while not self.cancelled:
             self.connection.process_data_events()
+        log.debug('Consumer cancelled, exiting.')
     def __call__(self):
-        return self.start_consuming()
+        try:
+            return self.start_consuming()
+        except Exception:
+            log.exception('Consuming:')
