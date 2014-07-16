@@ -13,7 +13,7 @@ import pika
 import uuid
 import logging
 
-log = logging.getLogger()
+log = logging.getLogger('occo.util.comm.mq')
 
 PROTOCOL_ID='amqp'
 
