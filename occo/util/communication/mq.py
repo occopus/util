@@ -142,5 +142,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
     def __call__(self):
         try:
             return self.start_consuming()
+        except KeyboardInterrupt:
+            log.debug('Ctrl-C Exiting.')
         except Exception:
             log.exception('Consuming:')
