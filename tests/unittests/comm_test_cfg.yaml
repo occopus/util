@@ -1,9 +1,10 @@
 default_mqconfig: &MQCFG
     protocol: amqp
-    host: http://192.168.152.184/
+    host: 192.168.152.184
     vhost: test
     exhange: ''
     routing_key: ''
+    queue: test
     user: test
     password: test
 async_queue: &ASYNC_Q
@@ -15,5 +16,38 @@ rpc_queue: &RPC_Q
 endpoints:
     producer_async: *ASYNC_Q
     producer_rpc: *RPC_Q
-    consumer_async: *ASYNC_Q
-    consumer_rpc: *RPC_Q
+    consumer_async:
+        <<: *ASYNC_Q
+        queue: unittest_queue_async
+    consumer_rpc:
+        <<: *RPC_Q
+        queue: unittest_queue_rpc
+logging:
+    version: 1
+    root:
+        level: CRITICAL
+        handlers: [console, file]
+    formatters:
+        simpleFormater:
+            format: "%(asctime)s\t%(levelname)s\t%(threadName)s\t%(message)s"
+#            datefmt: '%Y-%m-%d %H:%M:%S.%f'
+
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: simpleFormater
+            level: DEBUG
+            stream: ext://sys.stdout
+        file:
+            class : logging.FileHandler
+            formatter: simpleFormater
+            level: DEBUG
+            filename: rabbit.log
+
+    loggers:
+        clogger:
+            level: DEBUG
+            handlers: [console]
+        flogger:
+            level: WARNING
+            handlers: [file]

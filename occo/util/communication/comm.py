@@ -118,7 +118,7 @@ class EventDrivenConsumer(MultiBackend):
         """
         self.processor, self.pargs, self.pkwargs = \
             processor, pargs, pkwargs
-    def _call_processor(data):
+    def _call_processor(self, data):
         return self.processor(data, *self.pargs, **self.pkwargs)
     def start_consuming(self):
         """Start consuming messages in an infinite loop."""
