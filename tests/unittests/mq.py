@@ -47,6 +47,8 @@ class MQBootstrapTest(unittest.TestCase):
                   comm.EventDrivenConsumer])
 
 class MQConnectionTest(unittest.TestCase):
+    def setUp(self):
+        self.data = None
     def test_rpc_init_prod(self):
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
     def test_async_init_prod(self):
@@ -74,7 +76,7 @@ class MQConnectionTest(unittest.TestCase):
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Async Consumer: message has arrived')
-            self.assertEqual(msg, MSG)
+            self.data = msg
             log.debug('Async Consumer: setting cancel event')
             e.set()
             log.debug('Async consumer: cancel event has been set')
@@ -88,6 +90,7 @@ class MQConnectionTest(unittest.TestCase):
         log.debug('Waiting Async arrival')
         e.wait()
         log.debug('Async message has arrived')
+        self.assertEqual(self.data, MSG)
         log.debug('Waiting for Async Consumer to exit')
         t.join()
 
