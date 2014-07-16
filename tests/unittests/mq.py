@@ -84,12 +84,13 @@ class MQConnectionTest(unittest.TestCase):
     def test_async(self):
         MSG='test message abc'
         e = threading.Event()
+        r = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Async Consumer: message has arrived')
             self.data = msg
-            log.debug('Async Consumer: setting cancel event')
-            e.set()
-            log.debug('Async consumer: cancel event has been set')
+            log.debug('Async Consumer: setting response event')
+            r.set()
+            log.debug('Async consumer: response event has been set')
         p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_async'])
@@ -98,9 +99,11 @@ class MQConnectionTest(unittest.TestCase):
         log.debug('Sending Async message')
         p.push_message(MSG)
         log.debug('Waiting Async arrival')
-        e.wait()
+        r.wait()
         log.debug('Async message has arrived')
         self.assertEqual(self.data, MSG)
+        log.debug('Setting Async cancel event')
+        e.set()
         log.debug('Waiting for Async Consumer to exit')
         t.join()
         log.debug('Consumer exited')
