@@ -74,6 +74,8 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         self.correlation_id = None
 
     def on_response(self, ch, method, props, body):
+        log.debug('RPC response callback; received message: %r, expecting %r',
+                  props.correlation_id, self.correlation_id)
         if self.correlation_id == props.correlation_id:
             self.response = body
 
@@ -93,10 +95,10 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 
             self.setup_consumer(self.on_response, no_ack=True,
                                 queue=self.callback_queue)
-            log.debug('Waiting for response')
+            log.debug('RPC push message: waiting for response')
             while self.response is None:
                 self.connection.process_data_events()
-            log.debug('Received response: %r', self.response)
+            log.debug('RPC push message: received response: %r', self.response)
             return self.response
         finally:
             self.__reset()
@@ -136,6 +138,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         return self.cancel_event and self.cancel_event.is_set()
 
     def start_consuming(self):
+        log.debug('Starting consuming')
         while not self.cancelled:
             self.connection.process_data_events()
         log.debug('Consumer cancelled, exiting.')

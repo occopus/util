@@ -64,9 +64,12 @@ class MQConnectionTest(unittest.TestCase):
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
+        log.debug('RPC Creating thread object')
         t = threading.Thread(target=c)
+        log.debug('RPC Starting thread')
         t.start()
-        log.debug('Sending RPC message and waiting for response')
+        log.debug('RPC thread started, sending RPC message and '
+                  'waiting for response')
         retval = p.push_message(MSG)
         log.debug('Response arrived')
         self.assertEqual(retval, MSG)
@@ -77,6 +80,7 @@ class MQConnectionTest(unittest.TestCase):
         log.debug('Consumer exited')
     @unittest.skip('')
     def test_rpc(self):
+        log.debug('Starting test RPC')
         try:
             self.i_test_rpc()
         except Exception:
@@ -94,9 +98,11 @@ class MQConnectionTest(unittest.TestCase):
         p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_async'])
+        log.debug('Async Creating thread object')
         t = threading.Thread(target=c)
+        log.debug('Async Starting thread')
         t.start()
-        log.debug('Sending Async message')
+        log.debug('Async thread started, sending Async message')
         p.push_message(MSG)
         log.debug('Waiting Async arrival')
         r.wait()
