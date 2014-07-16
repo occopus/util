@@ -71,6 +71,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
         self.__reset()
+
     def __enter__(self):
         super(MQRPCProducer, self).__enter__()
         self.callback_queue = self.declare_response_queue()
@@ -79,7 +80,8 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         self.response = None
         self.correlation_id = None
 
-    def on_response(self, ch, method, props, body):
+    def __on_response(self, ch, method, props, body):
+        """Callback function for RPC response."""
         log.debug('RPC response callback; received message: %r, expecting %r',
                   props.correlation_id, self.correlation_id)
         if self.correlation_id == props.correlation_id:
@@ -99,7 +101,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
                                      correlation_id = self.correlation_id),
                                  **kwargs)
 
-            self.setup_consumer(self.on_response, no_ack=True,
+            self.setup_consumer(self.__on_response, no_ack=True,
                                 queue=self.callback_queue)
             log.debug('RPC push message: waiting for response')
             while self.response is None:
