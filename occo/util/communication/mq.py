@@ -122,13 +122,14 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         if not self.queue:
             raise ValueError('Queue name is mandatory')
         self.cancel_event = cancel_event
+
     def __enter__(self):
         super(MQEventDrivenConsumer, self).__enter__()
         self.declare_queue(self.queue)
         self.channel.basic_qos(prefetch_count=1)
-        self.setup_consumer(self.callback, queue=self.queue)
+        self.setup_consumer(self.__callback, queue=self.queue)
 
-    def callback(self, ch, method, props, body):
+    def __callback(self, ch, method, props, body):
         log.debug('Consumer: message has arrived; calling internal method')
         retval = self._call_processor(body)
         log.debug('Consumer: internal method exited')
