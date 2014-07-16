@@ -59,18 +59,22 @@ class MQConnectionTest(unittest.TestCase):
         MSG='test message abc'
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
+            log.debug('RPC Consumer: message has arrived')
             return msg
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
         t = threading.Thread(target=c)
         t.start()
-        log.debug('sendingrpc message')
+        log.debug('Sending RPC message and waiting for response')
         retval = p.push_message(MSG)
-        e.set()
-        t.join()
+        log.debug('Response arrived')
         self.assertEqual(retval, MSG)
-        log.debug('sent, received rpc')
+        log.debug('Setting cancel event')
+        e.set()
+        log.debug('Waiting for RPC Consumer to exit')
+        t.join()
+        log.debug('Consumer exited')
     def test_async(self):
         MSG='test message abc'
         e = threading.Event()
@@ -93,6 +97,7 @@ class MQConnectionTest(unittest.TestCase):
         self.assertEqual(self.data, MSG)
         log.debug('Waiting for Async Consumer to exit')
         t.join()
+        log.debug('Consumer exited')
 
 if __name__ == '__main__':
     import os
