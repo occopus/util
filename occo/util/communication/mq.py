@@ -24,7 +24,6 @@ class MQHandler(object):
         self.connection_parameters = pika.ConnectionParameters(
             config['host'], config.get('port', 5672),
             config['vhost'], self.credentials)
-        self.queue = config.get('queue', None)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
     def __enter__(self):
@@ -117,6 +116,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         super(MQEventDrivenConsumer, self).__init__(**config)
         comm.EventDrivenConsumer.__init__(
             self, processor=processor, pargs=pargs, pkwargs=pkwargs)
+        self.queue = config.get('queue', None)
         if not self.queue:
             raise ValueError('Queue name is mandatory')
         self.cancel_event = cancel_event
