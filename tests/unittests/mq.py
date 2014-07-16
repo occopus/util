@@ -82,7 +82,6 @@ class MQConnectionTest(unittest.TestCase):
             log.debug('Waiting for RPC Consumer to exit')
             t.join()
             log.debug('Consumer exited')
-    @unittest.skip('')
     def test_rpc(self):
         log.debug('Starting test RPC')
         try:
