@@ -155,20 +155,12 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
         self.response = None
         self.correlation_id = None
     def __enter__(self):
-        self.lock.acquire()
-        try:
-            super(MQRPCProducer, self).__enter__()
-            self.callback_queue = self.declare_response_queue()
-            self.setup_consumer(
-                self.__on_response, no_ack=True, queue=self.callback_queue)
-            self.correlation_id = str(uuid.uuid4())
-        except:
-            self.lock.release()
-            raise
+        super(MQRPCProducer, self).__enter__()
+        self.callback_queue = self.declare_response_queue()
+        self.setup_consumer(
+            self.__on_response, no_ack=True, queue=self.callback_queue)
     def __exit__(self, type, value, tb):
-        self.__reset()
         super(MQRPCProducer, self).__exit__(type, value, tb)
-        self.lock.release()
 
     def __on_response(self, ch, method, props, body):
         """Callback function for RPC response."""
@@ -180,24 +172,31 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
     def push_message(self, msg, routing_key=None, **kwargs):
         """Pushes a message and waits for response."""
 
-        # Ensure queue exists
-        rkey = self.effective_routing_key(routing_key)
-        self.declare_queue(rkey)
+        try:
+            self.lock.acquire()
+            self.correlation_id = str(uuid.uuid4())
 
-        # Send request
-        self.publish_message(msg, routing_key=rkey,
-                             properties=pika.BasicProperties(
-                                 reply_to = self.callback_queue,
-                                 correlation_id = self.correlation_id),
-                             **kwargs)
+            # Ensure queue exists
+            rkey = self.effective_routing_key(routing_key)
+            self.declare_queue(rkey)
 
-        # Wait for response
-        log.debug('RPC push message: waiting for response')
-        while self.response is None:
-            self.connection.process_data_events()
-        log.debug('RPC push message: received response: %r', self.response)
+            # Send request
+            self.publish_message(msg, routing_key=rkey,
+                                 properties=pika.BasicProperties(
+                                     reply_to = self.callback_queue,
+                                     correlation_id = self.correlation_id),
+                                 **kwargs)
 
-        return self.response
+            # Wait for response
+            log.debug('RPC push message: waiting for response')
+            while self.response is None:
+                self.connection.process_data_events()
+            log.debug('RPC push message: received response: %r', self.response)
+
+            return self.response
+        finally:
+            self.__reset()
+            self.lock.release()
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):

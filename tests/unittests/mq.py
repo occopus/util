@@ -107,18 +107,16 @@ class MQConnectionTest(unittest.TestCase):
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
-        with c:
+        with p, c:
             log.debug('Double RPC Creating thread object')
             t = threading.Thread(target=c)
             log.debug('Double RPC Starting thread')
             t.start()
             log.debug('Double RPC thread started, sending RPC message and '
                       'waiting for response')
-            with p:
-                retval = p.push_message(MSG)
+            retval = p.push_message(MSG)
             log.debug('Sending second RPC message and waiting for response')
-            with p:
-                retval2 = p.push_message(MSG2)
+            retval2 = p.push_message(MSG2)
             log.debug('Second response arrived')
             self.assertEqual(retval, EXPECTED)
             self.assertEqual(retval2, EXPECTED2)
