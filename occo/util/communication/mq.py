@@ -18,6 +18,7 @@ import occo.util as util
 import pika
 import uuid
 import logging
+import threading
 
 log = logging.getLogger('occo.util.comm.mq')
 
@@ -137,22 +138,37 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
 @comm.register(comm.RPCProducer, PROTOCOL_ID)
 class MQRPCProducer(MQHandler, comm.RPCProducer):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.RPCProducer`"""
+    :class:`occo.util.communication.comm.RPCProducer`
+
+    This class is thread safe through mutex access: at any time, only one
+    RPC call can be pending.
+
+    For multiple, simultaneous RPC calls, use multiple instances of this class.
+    """
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
+        # This class requires mutex access.
+        self.lock = threading.Lock()
         self.__reset()
 
     def __reset(self):
         self.response = None
         self.correlation_id = None
     def __enter__(self):
-        super(MQRPCProducer, self).__enter__()
-        self.callback_queue = self.declare_response_queue()
-        self.setup_consumer(
-            self.__on_response, no_ack=True, queue=self.callback_queue)
+        self.lock.acquire()
+        try:
+            super(MQRPCProducer, self).__enter__()
+            self.callback_queue = self.declare_response_queue()
+            self.setup_consumer(
+                self.__on_response, no_ack=True, queue=self.callback_queue)
+            self.correlation_id = str(uuid.uuid4())
+        except:
+            self.lock.release()
+            raise
     def __exit__(self, type, value, tb):
         self.__reset()
         super(MQRPCProducer, self).__exit__(type, value, tb)
+        self.lock.release()
 
     def __on_response(self, ch, method, props, body):
         """Callback function for RPC response."""
@@ -162,16 +178,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
             self.response = body
 
     def push_message(self, msg, routing_key=None, **kwargs):
-        """Pushes a message and waits for response.
-
-        .. TODO::
-
-            Use threading.Lock instead of runtime check.
-        """
-        if self.correlation_id != None:
-            raise RuntimeError('pika is not thread safe.')
-
-        self.correlation_id = str(uuid.uuid4())
+        """Pushes a message and waits for response."""
 
         # Ensure queue exists
         rkey = self.effective_routing_key(routing_key)
