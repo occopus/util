@@ -54,11 +54,11 @@ class MultiBackend(object):
     """
     def __new__(cls, *args, **kwargs):
         if not 'protocol' in kwargs:
-            raise ConfigurationError('Missing protocol specification')
+            raise ConfigurationError('protocol', 'Missing protocol specification')
 
         protocol = kwargs['protocol']
         if not protocol in cls.backends:
-            raise ConfigurationError(
+            raise ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
         return object.__new__(cls.backends[protocol], *args, **kwargs)
 

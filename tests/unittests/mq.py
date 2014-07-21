@@ -29,6 +29,7 @@ class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
         self.test_config = cfg.default_mqconfig
         self.fail_config = dict(extra='something')
+        self.fail_config_2 = dict(protocol='amqp', processor=None)
     def test_inst(self):
         map(lambda (cls1, cls2): \
                 self.assertEqual(cls1(**self.test_config).__class__, cls2),
@@ -43,6 +44,12 @@ class MQBootstrapTest(unittest.TestCase):
         def tst(cls):
             with self.assertRaises(comm.ConfigurationError):
                 cls(**self.fail_config)
+        map(tst, [comm.AsynchronProducer, comm.RPCProducer,
+                  comm.EventDrivenConsumer])
+    def test_bad_amqp(self):
+        def tst(cls):
+            with self.assertRaises(comm.ConfigurationError):
+                cls(**self.fail_config_2)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
 
@@ -60,10 +67,11 @@ class MQConnectionTest(unittest.TestCase):
             pass
     def i_test_rpc(self):
         MSG='test message abc'
+        EXPECTED='RE: test message abc'
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            return msg
+            return 'RE: %s'%msg
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
@@ -76,7 +84,7 @@ class MQConnectionTest(unittest.TestCase):
                       'waiting for response')
             retval = p.push_message(MSG)
             log.debug('Response arrived')
-            self.assertEqual(retval, MSG)
+            self.assertEqual(retval, EXPECTED)
             log.debug('Setting cancel event')
             e.set()
             log.debug('Waiting for RPC Consumer to exit')
@@ -88,13 +96,50 @@ class MQConnectionTest(unittest.TestCase):
             self.i_test_rpc()
         except Exception:
             log.exception('RPC test failed:')
+
+    def i_test_rpc_double(self):
+        MSG, MSG2 = 'test message abc', 'hello'
+        EXPECTED, EXPECTED2 = 'RE: test message abc', 'RE: hello'
+        e = threading.Event()
+        def consumer_core(msg, *args, **kwargs):
+            log.debug('Double RPC Consumer: message has arrived')
+            return 'RE: %s'%msg
+        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
+                                     **cfg.endpoints['consumer_rpc'])
+        with p, c:
+            log.debug('Double RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('Double RPC Starting thread')
+            t.start()
+            log.debug('Double RPC thread started, sending RPC message and '
+                      'waiting for response')
+            retval = p.push_message(MSG)
+            log.debug('Sending second RPC message and waiting for response')
+            retval2 = p.push_message(MSG2)
+            log.debug('Second response arrived')
+            self.assertEqual(retval, EXPECTED)
+            self.assertEqual(retval2, EXPECTED2)
+            log.debug('Setting cancel event')
+            e.set()
+            log.debug('Waiting for RPC Consumer to exit')
+            t.join()
+            log.debug('Consumer exited')
+    def test_rpc_double(self):
+        log.debug('Starting double test RPC')
+        try:
+            self.i_test_rpc_double()
+        except Exception:
+            log.exception('Double RPC test failed:')
+
     def test_async(self):
-        MSG='test message abc'
+        MSG = 'test message abc'
+        EXPECTED = 'RE: test message abc'
         e = threading.Event()
         r = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Async Consumer: message has arrived')
-            self.data = msg
+            self.data = 'RE: %s'%msg
             log.debug('Async Consumer: setting response event')
             r.set()
             log.debug('Async consumer: response event has been set')
@@ -111,7 +156,7 @@ class MQConnectionTest(unittest.TestCase):
             log.debug('Waiting Async arrival')
             r.wait()
             log.debug('Async message has arrived')
-            self.assertEqual(self.data, MSG)
+            self.assertEqual(self.data, EXPECTED)
             log.debug('Setting Async cancel event')
             e.set()
             log.debug('Waiting for Async Consumer to exit')
