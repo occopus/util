@@ -54,11 +54,11 @@ class MultiBackend(object):
     """
     def __new__(cls, *args, **kwargs):
         if not 'protocol' in kwargs:
-            raise ConfigurationError('Missing protocol specification')
+            raise ConfigurationError('protocol', 'Missing protocol specification')
 
         protocol = kwargs['protocol']
         if not protocol in cls.backends:
-            raise ConfigurationError(
+            raise ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
         return object.__new__(cls.backends[protocol], *args, **kwargs)
 
@@ -104,8 +104,8 @@ class EventDrivenConsumer(MultiBackend):
     Sub-classes may also implement the processor function itself, so they can
     act as self-contained services.
     """
-    def start_consuming(self, processor, *args, **kwargs):
-        """Register a message processor function.
+    def __init__(self, processor, pargs=[], pkwargs={}, **config):
+        """Create a consumer and register a message processor function.
 
         The processor function will be called upon message arrival, with the
         following arguments:
@@ -116,4 +116,10 @@ class EventDrivenConsumer(MultiBackend):
             - **kwargs: Specified upon registering the processor, these
                         are passed through to the processor function.
         """
+        self.processor, self.pargs, self.pkwargs = \
+            processor, pargs, pkwargs
+    def _call_processor(self, data):
+        return self.processor(data, *self.pargs, **self.pkwargs)
+    def start_consuming(self):
+        """Start consuming messages in an infinite loop."""
         raise NotImplementedError
