@@ -22,6 +22,7 @@ import threading
 
 log = logging.getLogger('occo.util.comm.mq')
 
+# These implementations are identified with the following protocol key:
 PROTOCOL_ID='amqp'
 
 class MQHandler(object):
@@ -126,7 +127,12 @@ class MQHandler(object):
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.AsynchronProducer`"""
+    :class:`occo.util.communication.comm.AsynchronProducer`
+
+    .. warning::
+
+        Use context management with this class.
+    """
     def __init__(self, **config):
         super(MQAsynchronProducer,self).__init__(**config)
 
@@ -144,6 +150,10 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
     RPC call can be pending.
 
     For multiple, simultaneous RPC calls, use multiple instances of this class.
+
+    .. warning::
+
+        Use context management with this class.
     """
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
@@ -201,16 +211,26 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.EventDrivenConsumer`"""
-    def __init__(self, processor, pargs=[], pkwargs={},
-                 cancel_event=None, **config):
+    :class:`occo.util.communication.comm.EventDrivenConsumer`
+
+    Supports being the target of a threading.Thread.
+
+    .. warning::
+
+        Use context management with this class.
+    """
+    def __init__(self,
+                 processor, pargs=[], pkwargs={},
+                 cancel_event=None,
+                 **config):
         super(MQEventDrivenConsumer, self).__init__(**config)
         comm.EventDrivenConsumer.__init__(
             self, processor=processor, pargs=pargs, pkwargs=pkwargs)
-        self.queue = config.get('queue', None)
-        if not self.queue:
-            raise ValueError('Queue name is mandatory')
         self.cancel_event = cancel_event
+        try:
+            self.queue = config['queue']
+        except KeyError:
+            raise ConfigurationError('queue', 'Queue name is mandatory')
 
     def __enter__(self):
         super(MQEventDrivenConsumer, self).__enter__()
