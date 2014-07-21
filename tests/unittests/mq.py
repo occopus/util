@@ -96,6 +96,44 @@ class MQConnectionTest(unittest.TestCase):
             self.i_test_rpc()
         except Exception:
             log.exception('RPC test failed:')
+
+    def i_test_rpc_double(self):
+        MSG, MSG2 = 'test message abc', 'hello'
+        EXPECTED, EXPECTED2 = 'RE: test message abc', 'RE: hello'
+        e = threading.Event()
+        def consumer_core(msg, *args, **kwargs):
+            log.debug('Double RPC Consumer: message has arrived')
+            return 'RE: %s'%msg
+        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
+                                     **cfg.endpoints['consumer_rpc'])
+        with c:
+            log.debug('Double RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('Double RPC Starting thread')
+            t.start()
+            log.debug('Double RPC thread started, sending RPC message and '
+                      'waiting for response')
+            with p:
+                retval = p.push_message(MSG)
+            log.debug('Sending second RPC message and waiting for response')
+            with p:
+                retval2 = p.push_message(MSG2)
+            log.debug('Second response arrived')
+            self.assertEqual(retval, EXPECTED)
+            self.assertEqual(retval2, EXPECTED2)
+            log.debug('Setting cancel event')
+            e.set()
+            log.debug('Waiting for RPC Consumer to exit')
+            t.join()
+            log.debug('Consumer exited')
+    def test_rpc_double(self):
+        log.debug('Starting double test RPC')
+        try:
+            self.i_test_rpc_double()
+        except Exception:
+            log.exception('Double RPC test failed:')
+
     def test_async(self):
         MSG = 'test message abc'
         EXPECTED = 'RE: test message abc'
