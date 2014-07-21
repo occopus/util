@@ -67,10 +67,11 @@ class MQConnectionTest(unittest.TestCase):
             pass
     def i_test_rpc(self):
         MSG='test message abc'
+        EXPECTED='RE: test message abc'
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            return msg
+            return 'RE: %s'%msg
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
@@ -83,7 +84,7 @@ class MQConnectionTest(unittest.TestCase):
                       'waiting for response')
             retval = p.push_message(MSG)
             log.debug('Response arrived')
-            self.assertEqual(retval, MSG)
+            self.assertEqual(retval, EXPECTED)
             log.debug('Setting cancel event')
             e.set()
             log.debug('Waiting for RPC Consumer to exit')
@@ -96,12 +97,13 @@ class MQConnectionTest(unittest.TestCase):
         except Exception:
             log.exception('RPC test failed:')
     def test_async(self):
-        MSG='test message abc'
+        MSG = 'test message abc'
+        EXPECTED = 'RE: test message abc'
         e = threading.Event()
         r = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Async Consumer: message has arrived')
-            self.data = msg
+            self.data = 'RE: %s'%msg
             log.debug('Async Consumer: setting response event')
             r.set()
             log.debug('Async consumer: response event has been set')
@@ -118,7 +120,7 @@ class MQConnectionTest(unittest.TestCase):
             log.debug('Waiting Async arrival')
             r.wait()
             log.debug('Async message has arrived')
-            self.assertEqual(self.data, MSG)
+            self.assertEqual(self.data, EXPECTED)
             log.debug('Setting Async cancel event')
             e.set()
             log.debug('Waiting for Async Consumer to exit')
