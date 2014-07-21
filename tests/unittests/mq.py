@@ -29,6 +29,7 @@ class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
         self.test_config = cfg.default_mqconfig
         self.fail_config = dict(extra='something')
+        self.fail_config_2 = dict(protocol='amqp', processor=None)
     def test_inst(self):
         map(lambda (cls1, cls2): \
                 self.assertEqual(cls1(**self.test_config).__class__, cls2),
@@ -43,6 +44,12 @@ class MQBootstrapTest(unittest.TestCase):
         def tst(cls):
             with self.assertRaises(comm.ConfigurationError):
                 cls(**self.fail_config)
+        map(tst, [comm.AsynchronProducer, comm.RPCProducer,
+                  comm.EventDrivenConsumer])
+    def test_bad_amqp(self):
+        def tst(cls):
+            with self.assertRaises(comm.ConfigurationError):
+                cls(**self.fail_config_2)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
 

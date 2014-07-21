@@ -53,11 +53,14 @@ class MQHandler(object):
 
         Subclasses may require additional configuration parameters.
         """
-        self.credentials = pika.PlainCredentials(
-            config['user'], config['password'])
-        self.connection_parameters = pika.ConnectionParameters(
-            config['host'], config.get('port', 5672),
-            config['vhost'], self.credentials)
+        try:
+            self.credentials = pika.PlainCredentials(
+                config['user'], config['password'])
+            self.connection_parameters = pika.ConnectionParameters(
+                config['host'], config.get('port', 5672),
+                config['vhost'], self.credentials)
+        except KeyError as e:
+            raise comm.ConfigurationError(e)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
 
