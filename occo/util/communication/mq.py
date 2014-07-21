@@ -120,8 +120,7 @@ class MQHandler(object):
 
         ``kwargs`` are passed to ``basic_consume``.
         """
-        self.channel.basic_consume(callback, queue=queue,
-                                   **kwargs)
+        self.channel.basic_consume(callback, queue=queue, **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
@@ -163,13 +162,14 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
 
         .. TODO::
 
-            Use threading.Lock instead of this
+            Use threading.Lock instead of runtime check.
         """
         if self.correlation_id != None:
             raise RuntimeError('pika is not thread safe.')
 
-        self.correlation_id = str(uuid.uuid4())
         try:
+            self.correlation_id = str(uuid.uuid4())
+
             # Ensure queue exists
             rkey = self.effective_routing_key(routing_key)
             self.declare_queue(rkey)
