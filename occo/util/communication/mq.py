@@ -56,6 +56,7 @@ class MQHandler(object):
         Subclasses may require additional configuration parameters.
         """
         try:
+            log.debug('Config:\n%r', config)
             self.credentials = pika.PlainCredentials(
                 config['user'], config['password'])
             self.connection_parameters = pika.ConnectionParameters(
@@ -240,19 +241,24 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
 
     def __callback(self, ch, method, props, body):
         log.debug('Consumer: message has arrived; calling internal method')
-        retval = self._call_processor(body)
-        log.debug('Consumer: internal method exited')
-        if props.reply_to:
-            log.debug('Consumer: RPC message, responding')
-            self.publish_message(str(retval),
-                                 exchange='',
-                                 routing_key=props.reply_to,
-                                 properties=pika.BasicProperties(
-                                     correlation_id=props.correlation_id))
-            log.debug('Consumer: response sent')
-        log.debug('Consumer: ACK-ing')
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        log.debug('Consumer: done')
+        log.debug('Message body:\n%s', body)
+        try:
+            retval = self._call_processor(body)
+            log.debug('Consumer: internal method exited')
+            if props.reply_to:
+                log.debug('Consumer: RPC message, responding')
+                self.publish_message(str(retval),
+                                     exchange='',
+                                     routing_key=props.reply_to,
+                                     properties=pika.BasicProperties(
+                                         correlation_id=props.correlation_id))
+                log.debug('Consumer: response sent')
+            log.debug('Consumer: ACK-ing')
+        except Exception:
+            log.exception('Unhandled exception:')
+        finally:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            log.debug('Consumer: done')
 
     @property
     def cancelled(self):
