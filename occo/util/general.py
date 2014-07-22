@@ -4,7 +4,9 @@
 # Configuration primitives for the SZTAKI Cloud Orchestrator
 #
 
-__all__ = ['coalesce', 'icoalesce']
+__all__ = ['coalesce', 'icoalesce', 'flatten']
+
+import itertools
 
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.
@@ -21,3 +23,5 @@ def icoalesce(iterable, default=None):
 def coalesce(*args):
     """Proxy function for icoalesce. Provided for convenience."""
     return icoalesce(args)
+def flatten(iterable):
+    return itertools.chain.from_iterable(iterable)
