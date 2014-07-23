@@ -45,6 +45,10 @@ logging:
             filename: rabbit.log
 
     loggers:
+        occo:
+            propagate: false
+            level: DEBUG
+            handlers: [console]
         clogger:
             level: DEBUG
             handlers: [console]
