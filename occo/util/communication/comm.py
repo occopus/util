@@ -11,7 +11,8 @@ selecting and instantiating the right backend can be done automatically.
 """
 
 __all__ = ['AsynchronProducer', 'RPCProducer', 'EventDrivenConsumer',
-           'register', 'ConfigurationError']
+           'register', 'CommChannel',
+           'ConfigurationError']
 
 class ConfigurationError(Exception):
     """Raised by communication classes, if the given configuration is bad, or
@@ -62,7 +63,16 @@ class MultiBackend(object):
                 'The backend specified (%s) does not exist'%protocol)
         return object.__new__(cls.backends[protocol], *args, **kwargs)
 
-class AsynchronProducer(MultiBackend):
+class CommChannel(object):
+    def serialize(self, obj):
+        """Create a transmittable representation of ``obj``."""
+        raise NotImplementedError()
+
+    def deserialize(self, repr_):
+        """Create an object from its representation."""
+        raise NotImplementedError()
+
+class AsynchronProducer(MultiBackend, CommChannel):
     """Abstract interface of an asynchron producer. Sub-classes must implement
     asynchron message pushing in the push_message method."""
     def push_message(self, message, **kwargs):
@@ -74,7 +84,7 @@ class AsynchronProducer(MultiBackend):
         """
         raise NotImplementedError
 
-class RPCProducer(MultiBackend):
+class RPCProducer(MultiBackend, CommChannel):
     """Abstract interface of an RPC client. Sub-classes must implement remote
     procedure calls in the push_message method.
 
@@ -94,7 +104,7 @@ class RPCProducer(MultiBackend):
         """
         raise NotImplementedError
 
-class EventDrivenConsumer(MultiBackend):
+class EventDrivenConsumer(MultiBackend, CommChannel):
     """Abstract interface of an event-driven message processor.
 
     Sub-classes must implement the start_consuming method, which registers a

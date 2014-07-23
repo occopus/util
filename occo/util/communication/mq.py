@@ -19,11 +19,21 @@ import pika
 import uuid
 import logging
 import threading
+import yaml
 
 log = logging.getLogger('occo.util.comm.mq')
 
 # These implementations are identified with the following protocol key:
 PROTOCOL_ID='amqp'
+
+class YAMLChannel(comm.CommChannel):
+    def serialize(self, obj):
+        """Create a transmittable representation of ``obj``."""
+        return yaml.dump(obj)
+
+    def deserialize(self, repr_):
+        """Create an object from its representation."""
+        return yaml.load(repr_)
 
 class MQHandler(object):
     """Common functions for all AMQP implementations.
@@ -116,7 +126,7 @@ class MQHandler(object):
         self.channel.basic_publish(
             exchange=self.effective_exchange(exchange),
             routing_key=self.effective_routing_key(routing_key),
-            body=msg,
+            body=self.serialize(msg),
             **kwargs)
     def setup_consumer(self, callback, queue, **kwargs):
         """Registers a consumer callback for the given queue.
@@ -126,7 +136,7 @@ class MQHandler(object):
         self.channel.basic_consume(callback, queue=queue, **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
-class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
+class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.AsynchronProducer`
 
@@ -143,7 +153,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
         self.publish_message(msg, routing_key=rkey, **kwargs)
 
 @comm.register(comm.RPCProducer, PROTOCOL_ID)
-class MQRPCProducer(MQHandler, comm.RPCProducer):
+class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.RPCProducer`
 
@@ -204,13 +214,16 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
                 self.connection.process_data_events()
             log.debug('RPC push message: received response: %r', self.response)
 
-            return self.response
+            response = self.deserialize(self.response)
+            response.check()
+
+            return response.data
         finally:
             self.__reset()
             self.lock.release()
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
-class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
+class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.EventDrivenConsumer`
 
@@ -243,7 +256,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         log.debug('Consumer: message has arrived; calling internal method')
         log.debug('Message body:\n%s', body)
         try:
-            retval = self._call_processor(body)
+            retval = self._call_processor(self.deserialize(body))
             log.debug('Consumer: internal method exited')
             if props.reply_to:
                 log.debug('Consumer: RPC message, responding')
