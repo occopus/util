@@ -27,6 +27,7 @@ log = logging.getLogger('occo.util.comm.mq')
 PROTOCOL_ID='amqp'
 
 class YAMLChannel(comm.CommChannel):
+    """Implement channel serialization with YAML"""
     def serialize(self, obj):
         """Create a transmittable representation of ``obj``."""
         return yaml.dump(obj)
@@ -120,6 +121,8 @@ class MQHandler(object):
         The message will be published to the exchange specified by
         :func:`effective_exchange`, and with a routing key specified by
         :func:`effective_routing_key`.
+
+        The message will be serialized for transfer.
 
         ``kwargs`` are passed to ``basic_publish``.
         """

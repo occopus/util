@@ -29,6 +29,8 @@ class CommunicationError(Exception):
 
     The exception object may contain a ``reason``, which specifies the details
     of the error.
+
+    RPC clients must be prepared to catch and handle these exceptions.
     """
     def __init__(self, http_code, reason=None):
         self.http_code, self.reason = http_code, reason
@@ -53,9 +55,26 @@ class CriticalError(CommunicationError):
     pass
 
 class Response(object):
+    """RPC services will return a ``Response`` object containing the response
+    data and response status information.
+
+    A ``Response`` object can check itself, and raise an exception based on
+    its status code.
+
+    .. note::
+
+        RPC clients and servers need not bother with ``Response`` objects, the
+        communication layer will hide it. The server core function only has to
+        return the result data, or raise some kind of a
+        :class:`CommunicationError`. These will be wrapped into a ``Response``
+        object by the communication layer. Similarly, calling ``push_message``
+        will either return the raw response data, or raise the exception thrown
+        by the server code.
+    """
     def __init__(self, http_code, data):
         self.http_code, self.data = http_code, data
     def check(self):
+        """Raises an exception based on the status code of the response."""
         code = self.http_code
         if code <= 199: raise NotImplementedError()
         elif code <= 299: pass
@@ -63,7 +82,9 @@ class Response(object):
         elif code <= 499: raise CriticalError(code, self.data)
         elif code <= 599: raise TransientError(code, self.data)
         else: raise NotImplementedError()
+
 class ExceptionResponse(Response):
+    """Special response that will only raise an internal exception."""
     def check_error(self):
         raise self.data
 
