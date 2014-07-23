@@ -252,24 +252,46 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(self.__callback, queue=self.queue)
 
-    def __callback(self, ch, method, props, body):
-        log.debug('Consumer: message has arrived; calling internal method')
-        log.debug('Message body:\n%s', body)
-        try:
-            retval = self._call_processor(self.deserialize(body))
-            log.debug('Consumer: internal method exited')
-            if props.reply_to:
-                log.debug('Consumer: RPC message, responding')
-                self.publish_message(str(retval),
+    def __reply_if_rpc(self, response, props):
+        if props.reply_to:
+            log.debug('RPC message, responding')
+            try:
+                self.publish_message(response,
                                      exchange='',
                                      routing_key=props.reply_to,
                                      properties=pika.BasicProperties(
                                          correlation_id=props.correlation_id))
-                log.debug('Consumer: response sent')
-            log.debug('Consumer: ACK-ing')
+            except Exception:
+                log.exception('Error sending response:')
+            else:
+                log.debug('Response sent')
+
+    def __callback(self, ch, method, props, body):
+        log.debug('Message has arrived; message body:\n%s', body)
+        try:
+            try:
+                log.debug('Calling internal method')
+                retval = self._call_processor(self.deserialize(body))
+            except comm.CommunicationError as e:
+                log.debug('Internal method signaled an error.')
+                response = comm.ExceptionResponse(e.http_code, e)
+            else:
+                log.debug('Internal method exited')
+                response = comm.Response(200, retval)
+
+            self.__reply_if_rpc(response, props)
         except Exception:
             log.exception('Unhandled exception:')
+            self.__reply_if_rpc(
+                comm.Response(500, 'Internal Server Error'), props)
         finally:
+            #. .. todo::
+            #.
+            #.     Should we ACK failed requests? On what condition?
+            #.      * Http 503: transient error => no ack
+            #.      * Http 4xx, 500: probably ACK, so this error will not be
+            #.        repeated here/elsewhere
+            log.debug('Consumer: ACK-ing')
             ch.basic_ack(delivery_tag=method.delivery_tag)
             log.debug('Consumer: done')
 
