@@ -13,6 +13,7 @@ import itertools as it
 import threading
 import logging
 import logging.config
+import uuid
 
 CFG_FILE='comm_test_cfg.yaml'
 with open(CFG_FILE) as cfg:
@@ -66,8 +67,8 @@ class MQConnectionTest(unittest.TestCase):
         with comm.EventDrivenConsumer(dummy, **cfg.endpoints['consumer_rpc']):
             pass
     def i_test_rpc(self):
-        MSG='test message abc'
-        EXPECTED='RE: test message abc'
+        MSG = str(uuid.uuid4())
+        EXPECTED = 'RE: %s'%msg
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
@@ -98,8 +99,9 @@ class MQConnectionTest(unittest.TestCase):
             log.exception('RPC test failed:')
 
     def i_test_rpc_double(self):
-        MSG, MSG2 = 'test message abc', 'hello'
-        EXPECTED, EXPECTED2 = 'RE: test message abc', 'RE: hello'
+        salt = str(uuid.uuid4())
+        MSG, MSG2 = salt, 'hello-%s'%salt
+        EXPECTED, EXPECTED2 = 'RE: %s'%MSG, 'RE: %s'%MSG2
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Double RPC Consumer: message has arrived')
