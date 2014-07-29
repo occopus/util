@@ -63,13 +63,23 @@ class Response(object):
 
     .. note::
 
-        RPC clients and servers need not bother with ``Response`` objects, the
-        communication layer will hide it. The server core function only has to
-        return the result data, or raise some kind of a
-        :class:`CommunicationError`. These will be wrapped into a ``Response``
-        object by the communication layer. Similarly, calling ``push_message``
-        will either return the raw response data, or raise the exception thrown
-        by the server code.
+        RPC clients need not bother with ``Response`` objects, the
+        communication layer will hide it.
+
+        The server core functionhas to return a Response object containing
+        an http code and data. If an exception has to be raised on client side,
+        an :class:`ExceptionResponse` object should be returned.
+
+        Calling ``push_message`` on client side will either return the raw
+        response data, or raise the exception thrown by the server code.
+
+    .. warning::
+
+        The server-side behaviour may change in the future. The goal would
+        be to make the server core function oblivious to communication details.
+        However, it is hard to distinguish between exceptions that should be
+        returned to the client, and those that should not (500 Internal
+        Server Error). If there is a solution, we will try and find it.
     """
     def __init__(self, http_code, data):
         self.http_code, self.data = http_code, data
