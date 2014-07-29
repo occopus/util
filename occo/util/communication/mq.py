@@ -280,7 +280,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
                 response = comm.ExceptionResponse(e.http_code, e)
             else:
                 log.debug('Internal method exited')
-                response = comm.Response(200, retval)
+                response = retval
 
             self.__reply_if_rpc(response, props)
         except Exception:
