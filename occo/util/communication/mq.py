@@ -19,11 +19,22 @@ import pika
 import uuid
 import logging
 import threading
+import yaml
 
 log = logging.getLogger('occo.util.comm.mq')
 
 # These implementations are identified with the following protocol key:
 PROTOCOL_ID='amqp'
+
+class YAMLChannel(comm.CommChannel):
+    """Implement channel serialization with YAML"""
+    def serialize(self, obj):
+        """Create a transmittable representation of ``obj``."""
+        return yaml.dump(obj)
+
+    def deserialize(self, repr_):
+        """Create an object from its representation."""
+        return yaml.load(repr_)
 
 class MQHandler(object):
     """Common functions for all AMQP implementations.
@@ -111,12 +122,14 @@ class MQHandler(object):
         :func:`effective_exchange`, and with a routing key specified by
         :func:`effective_routing_key`.
 
+        The message will be serialized for transfer.
+
         ``kwargs`` are passed to ``basic_publish``.
         """
         self.channel.basic_publish(
             exchange=self.effective_exchange(exchange),
             routing_key=self.effective_routing_key(routing_key),
-            body=msg,
+            body=self.serialize(msg),
             **kwargs)
     def setup_consumer(self, callback, queue, **kwargs):
         """Registers a consumer callback for the given queue.
@@ -126,7 +139,7 @@ class MQHandler(object):
         self.channel.basic_consume(callback, queue=queue, **kwargs)
 
 @comm.register(comm.AsynchronProducer, PROTOCOL_ID)
-class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
+class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.AsynchronProducer`
 
@@ -143,7 +156,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer):
         self.publish_message(msg, routing_key=rkey, **kwargs)
 
 @comm.register(comm.RPCProducer, PROTOCOL_ID)
-class MQRPCProducer(MQHandler, comm.RPCProducer):
+class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.RPCProducer`
 
@@ -204,13 +217,16 @@ class MQRPCProducer(MQHandler, comm.RPCProducer):
                 self.connection.process_data_events()
             log.debug('RPC push message: received response: %r', self.response)
 
-            return self.response
+            response = self.deserialize(self.response)
+            response.check()
+
+            return response.data
         finally:
             self.__reset()
             self.lock.release()
 
 @comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
-class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
+class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.EventDrivenConsumer`
 
@@ -239,24 +255,46 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer):
         self.channel.basic_qos(prefetch_count=1)
         self.setup_consumer(self.__callback, queue=self.queue)
 
-    def __callback(self, ch, method, props, body):
-        log.debug('Consumer: message has arrived; calling internal method')
-        log.debug('Message body:\n%s', body)
-        try:
-            retval = self._call_processor(body)
-            log.debug('Consumer: internal method exited')
-            if props.reply_to:
-                log.debug('Consumer: RPC message, responding')
-                self.publish_message(str(retval),
+    def __reply_if_rpc(self, response, props):
+        if props.reply_to:
+            log.debug('RPC message, responding')
+            try:
+                self.publish_message(response,
                                      exchange='',
                                      routing_key=props.reply_to,
                                      properties=pika.BasicProperties(
                                          correlation_id=props.correlation_id))
-                log.debug('Consumer: response sent')
-            log.debug('Consumer: ACK-ing')
+            except Exception:
+                log.exception('Error sending response:')
+            else:
+                log.debug('Response sent')
+
+    def __callback(self, ch, method, props, body):
+        log.debug('Message has arrived; message body:\n%s', body)
+        try:
+            try:
+                log.debug('Calling internal method')
+                retval = self._call_processor(self.deserialize(body))
+            except comm.CommunicationError as e:
+                log.debug('Internal method signaled an error.')
+                response = comm.ExceptionResponse(e.http_code, e)
+            else:
+                log.debug('Internal method exited')
+                response = retval
+
+            self.__reply_if_rpc(response, props)
         except Exception:
             log.exception('Unhandled exception:')
+            self.__reply_if_rpc(
+                comm.Response(500, 'Internal Server Error'), props)
         finally:
+            #. .. todo::
+            #.
+            #.     Should we ACK failed requests? On what condition?
+            #.      * Http 503: transient error => no ack
+            #.      * Http 4xx, 500: probably ACK, so this error will not be
+            #.        repeated here/elsewhere
+            log.debug('Consumer: ACK-ing')
             ch.basic_ack(delivery_tag=method.delivery_tag)
             log.debug('Consumer: done')
 
