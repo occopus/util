@@ -85,7 +85,7 @@ class Response(object):
 
 class ExceptionResponse(Response):
     """Special response that will only raise an internal exception."""
-    def check_error(self):
+    def check(self):
         raise self.data
 
 class RegisteredBackend(object):
