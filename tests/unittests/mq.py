@@ -83,14 +83,16 @@ class MQConnectionTest(unittest.TestCase):
             t.start()
             log.debug('RPC thread started, sending RPC message and '
                       'waiting for response')
-            retval = p.push_message(MSG)
-            log.debug('Response arrived')
-            self.assertEqual(retval, EXPECTED)
-            log.debug('Setting cancel event')
-            e.set()
-            log.debug('Waiting for RPC Consumer to exit')
-            t.join()
-            log.debug('Consumer exited')
+            try:
+                retval = p.push_message(MSG)
+                log.debug('Response arrived')
+                self.assertEqual(retval, EXPECTED)
+            finally:
+                log.debug('Setting cancel event')
+                e.set()
+                log.debug('Waiting for RPC Consumer to exit')
+                t.join()
+                log.debug('Consumer exited')
     def test_rpc(self):
         log.debug('Starting test RPC')
         try:
@@ -116,17 +118,19 @@ class MQConnectionTest(unittest.TestCase):
             t.start()
             log.debug('Double RPC thread started, sending RPC message and '
                       'waiting for response')
-            retval = p.push_message(MSG)
-            log.debug('Sending second RPC message and waiting for response')
-            retval2 = p.push_message(MSG2)
-            log.debug('Second response arrived')
-            self.assertEqual(retval, EXPECTED)
-            self.assertEqual(retval2, EXPECTED2)
-            log.debug('Setting cancel event')
-            e.set()
-            log.debug('Waiting for RPC Consumer to exit')
-            t.join()
-            log.debug('Consumer exited')
+            try:
+                retval = p.push_message(MSG)
+                log.debug('Sending second RPC message and waiting for response')
+                retval2 = p.push_message(MSG2)
+                log.debug('Second response arrived')
+                self.assertEqual(retval, EXPECTED)
+                self.assertEqual(retval2, EXPECTED2)
+            finally:
+                log.debug('Setting cancel event')
+                e.set()
+                log.debug('Waiting for RPC Consumer to exit')
+                t.join()
+                log.debug('Consumer exited')
     def test_rpc_double(self):
         log.debug('Starting double test RPC')
         try:
