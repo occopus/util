@@ -285,17 +285,12 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
             self.__reply_if_rpc(response, props)
         except Exception:
             log.exception('Unhandled exception:')
-            self.__reply_if_rpc(
-                comm.Response(500, 'Internal Server Error'), props)
+            response = comm.Response(500, 'Internal Server Error')
+            self.__reply_if_rpc(response, props)
         finally:
-            #. .. todo::
-            #.
-            #.     Should we ACK failed requests? On what condition?
-            #.      * Http 503: transient error => no ack
-            #.      * Http 4xx, 500: probably ACK, so this error will not be
-            #.        repeated here/elsewhere
-            log.debug('Consumer: ACK-ing')
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            if response.finalize:
+                log.debug('Consumer: ACK-ing')
+                ch.basic_ack(delivery_tag=method.delivery_tag)
             log.debug('Consumer: done')
 
     @property

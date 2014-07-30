@@ -61,17 +61,25 @@ class Response(object):
     A ``Response`` object can check itself, and raise an exception based on
     its status code.
 
+    The ``finalize`` argument determines whether the RPC request has been
+    actually processed, and should be finalized. If ``True``, the request
+    should be marked as processed, and processing must not be repeated.
+    If set to ``False``, processing has been aborted, and may be retried at
+    a later time, possibly by another server instance. This functionality
+    should be implemented by backends.
+
     .. note::
 
         RPC clients need not bother with ``Response`` objects, the
         communication layer will hide it.
 
-        The server core functionhas to return a Response object containing
+        The server core function has to return a Response object containing
         an http code and data. If an exception has to be raised on client side,
         an :class:`ExceptionResponse` object should be returned.
 
         Calling ``push_message`` on client side will either return the raw
-        response data, or raise the exception thrown by the server code.
+        response data, or raise the exception thrown by the server code. It
+        will never see the original response object.
 
     .. warning::
 
@@ -81,8 +89,9 @@ class Response(object):
         returned to the client, and those that should not (500 Internal
         Server Error). If there is a solution, we will try and find it.
     """
-    def __init__(self, http_code, data):
+    def __init__(self, http_code, data, finalize=True):
         self.http_code, self.data = http_code, data
+        self.finalize = finalize
     def check(self):
         """Raises an exception based on the status code of the response."""
         code = self.http_code
