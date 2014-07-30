@@ -72,7 +72,7 @@ class MQConnectionTest(unittest.TestCase):
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            return 'RE: %s'%msg
+            return comm.Response(200, 'RE: %s'%msg)
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
@@ -107,7 +107,7 @@ class MQConnectionTest(unittest.TestCase):
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Double RPC Consumer: message has arrived')
-            return 'RE: %s'%msg
+            return comm.Response(200, 'RE: %s'%msg)
         p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
                                      **cfg.endpoints['consumer_rpc'])
