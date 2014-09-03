@@ -6,6 +6,7 @@
 
 import unittest
 from common import *
+import occo.util as util
 import occo.util.communication as comm
 import occo.util.communication.mq as mq
 import occo.util.config as config
@@ -43,13 +44,13 @@ class MQBootstrapTest(unittest.TestCase):
             mq.MQEventDrivenConsumer)
     def test_bad_inst(self):
         def tst(cls):
-            with self.assertRaises(comm.ConfigurationError):
+            with self.assertRaises(util.ConfigurationError):
                 cls(**self.fail_config)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
     def test_bad_amqp(self):
         def tst(cls):
-            with self.assertRaises(comm.ConfigurationError):
+            with self.assertRaises(util.ConfigurationError):
                 cls(**self.fail_config_2)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])

@@ -15,6 +15,7 @@ __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
 
 import comm
 import occo.util as util
+import occo.util.factory as factory
 import pika
 import uuid
 import logging
@@ -74,7 +75,7 @@ class MQHandler(object):
                 config['host'], config.get('port', 5672),
                 config['vhost'], self.credentials)
         except KeyError as e:
-            raise comm.ConfigurationError(e)
+            raise util.ConfigurationError(e)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
 
@@ -138,7 +139,7 @@ class MQHandler(object):
         """
         self.channel.basic_consume(callback, queue=queue, **kwargs)
 
-@comm.register(comm.AsynchronProducer, PROTOCOL_ID)
+@factory.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.AsynchronProducer`
@@ -155,7 +156,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
         self.declare_queue(rkey)
         self.publish_message(msg, routing_key=rkey, **kwargs)
 
-@comm.register(comm.RPCProducer, PROTOCOL_ID)
+@factory.register(comm.RPCProducer, PROTOCOL_ID)
 class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.RPCProducer`
@@ -225,7 +226,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
             self.__reset()
             self.lock.release()
 
-@comm.register(comm.EventDrivenConsumer, PROTOCOL_ID)
+@factory.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
     """AMQP implementation of
     :class:`occo.util.communication.comm.EventDrivenConsumer`
@@ -247,7 +248,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         try:
             self.queue = config['queue']
         except KeyError:
-            raise ConfigurationError('queue', 'Queue name is mandatory')
+            raise util.ConfigurationError('queue', 'Queue name is mandatory')
 
     def __enter__(self):
         super(MQEventDrivenConsumer, self).__enter__()

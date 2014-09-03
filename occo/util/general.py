@@ -4,9 +4,15 @@
 # Configuration primitives for the SZTAKI Cloud Orchestrator
 #
 
-__all__ = ['coalesce', 'icoalesce', 'flatten']
+__all__ = ['coalesce', 'icoalesce', 'flatten',
+           'ConfigurationError']
 
 import itertools
+
+class ConfigurationError(Exception):
+    """Raised by communication classes, if the given configuration is bad, or
+    insufficient."""
+    pass
 
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.
