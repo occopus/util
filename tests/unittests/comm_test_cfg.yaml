@@ -2,7 +2,7 @@ default_mqconfig: &MQCFG
     protocol: amqp
     host: 192.168.152.184
     vhost: test
-    exhange: ''
+    exchange: ''
     routing_key: ''
     queue: test
     user: test
@@ -25,7 +25,7 @@ endpoints:
 logging:
     version: 1
     root:
-        level: CRITICAL
+        level: DEBUG
         handlers: [console, file]
     formatters:
         simpleFormater:
@@ -45,6 +45,10 @@ logging:
             filename: rabbit.log
 
     loggers:
+        pika:
+            propagate: false
+            level: DEBUG
+            handlers: [console]
         occo:
             propagate: false
             level: DEBUG
