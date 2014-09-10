@@ -289,7 +289,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
             response = comm.Response(500, 'Internal Server Error')
             self.__reply_if_rpc(response, props)
         finally:
-            if response.finalize:
+            if response is None or response.finalize:
                 log.debug('Consumer: ACK-ing')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
             log.debug('Consumer: done')
