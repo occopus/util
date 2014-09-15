@@ -298,7 +298,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
     def cancelled(self):
         """Returns true iff consuming has been cancelled; based on
         ``cancel_event``."""
-        return self.cancel_event and self.cancel_event.is_set()
+        return not self.cancel_event or self.cancel_event.is_set()
 
     def start_consuming(self):
         """Starts processing queue until cancelled."""
