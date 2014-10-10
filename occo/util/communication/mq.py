@@ -64,6 +64,9 @@ class MQHandler(object):
         routing_key:
           Default routing_key, may be overridden by client methods.
           *Optional*, the default is ``None``.
+        auto_delete:
+          Auto delete queue.
+          *Optional*, the default is ``False``.
 
         Subclasses may require additional configuration parameters.
         """
@@ -78,6 +81,7 @@ class MQHandler(object):
             raise util.ConfigurationError(e)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
+        self.auto_delete = config.get('auto_delete', False)
 
     def __enter__(self):
         self.connection = pika.BlockingConnection(self.connection_parameters)
@@ -111,7 +115,8 @@ class MQHandler(object):
 
     def declare_queue(self, queue_name, **kwargs):
         """Declares a non-exclusive queue with the given name."""
-        self.channel.queue_declare(queue_name, **kwargs)
+        self.channel.queue_declare(
+            queue_name, auto_delete=self.auto_delete, **kwargs)
     def declare_response_queue(self, **kwargs):
         """Declares an auto-named, exclusive queue."""
         response = self.channel.queue_declare(exclusive=True, **kwargs)
@@ -302,10 +307,8 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
 
     def start_consuming(self):
         """Starts processing queue until cancelled."""
-        log.debug('Starting consuming')
         while not self.cancelled:
             self.connection.process_data_events()
-        log.debug('Consumer cancelled, exiting.')
     def __call__(self):
         """Entry point for ```threading.Thread.run()```"""
         try:
