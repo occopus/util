@@ -5,7 +5,7 @@
 #
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
-           'ConfigurationError']
+           'ConfigurationError', 'Cleaner']
 
 import itertools
 
@@ -52,25 +52,32 @@ class Cleaner(object):
         self.bar = bar
         self.match_hide_keys = match_hide_keys
         self.match_hide_values = match_hide_values
+
     def hold_back_key(self, key):
         return (key in self.hide_keys) or (self.match_hide_keys(key))
     def hold_back_value(self, value):
         return (value in self.hide_values) or (self.match_hide_values(value))
+
     def deep_copy(self, obj):
         if type(obj) is dict:
             return self.deep_copy_dict(obj)
         elif type(obj) is list:
             return self.deep_copy_list(obj)
+        else:
+            return self.deep_copy_value(obj)
+
     def deep_copy_value(self, value):
        return self.bar if self.hold_back_value(value) else value
     def deep_copy_pair(self, first, second):
-        return (first, self.bar) \
+        return \
+            (first, self.bar) \
             if self.hold_back_key(first) or self.hold_back_value(second) \
             else (first, second)
 
     def deep_copy_dict(self, d):
-        return dict(deep_copy_pair(k,v) for k,v in d.iteritems())
+        return dict(self.deep_copy_pair(k,self.deep_copy(v))
+                    for k,v in d.iteritems())
     def deep_copy_list(self, l):
-        return [self.bar if self.hold_back_value(i) else i
+        return [self.bar if self.hold_back_value(i)
+                else self.deep_copy(i)
                 for i in l]
-
