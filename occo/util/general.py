@@ -37,10 +37,24 @@ def identity(*args):
     return tuple(args)
 
 def nothing(*args, **kwargs):
-    """Identity function: False"""
+    """Constant function: False"""
     return False
 
 class Cleaner(object):
+    """
+    Provides a deep_copy() method that deep-copies a data
+    structure (nested lists and dicts), censoring specified information.
+
+    Censored information are:
+    - values pertaining to banned keys:
+        - k in hide_keys
+        - match_hide_keys(k)
+    - values banned explicitly
+        - v in hide_values
+        - match_hide_values(v)
+
+    match_* must be callables returning either True or False.
+    """
     def __init__(self,
                  hide_keys=[],
                  hide_values=[],
@@ -68,14 +82,14 @@ class Cleaner(object):
 
     def deep_copy_value(self, value):
        return self.bar if self.hold_back_value(value) else value
-    def deep_copy_pair(self, first, second):
+    def deep_copy_kvpair(self, first, second):
         return \
             (first, self.bar) \
             if self.hold_back_key(first) or self.hold_back_value(second) \
             else (first, second)
 
     def deep_copy_dict(self, d):
-        return dict(self.deep_copy_pair(k,self.deep_copy(v))
+        return dict(self.deep_copy_kvpair(k,self.deep_copy(v))
                     for k,v in d.iteritems())
     def deep_copy_list(self, l):
         return [self.bar if self.hold_back_value(i)
