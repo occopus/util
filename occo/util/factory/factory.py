@@ -10,6 +10,17 @@
 __all__ = ['register', 'MultiBackend']
 
 import occo.util as util
+import yaml
+import logging
+
+log = logging.getLogger('occo.util')
+
+class YAMLConstructor(object):
+    def __init__(self, cls):
+        self.cls = cls
+    def __call__(self, loader, node):
+        return self.cls() if type(node) is yaml.ScalarNode \
+                else self.cls(**loader.construct_mapping(node, deep=True))
 
 class RegisteredBackend(object):
     """Decorator class to register backends for the communication classes.
@@ -24,7 +35,13 @@ class RegisteredBackend(object):
         self.id_ = id_
     def __call__(self, cls):
         if not hasattr(self.target, 'backends'):
-            self.target.backends = dict()
+            target = self.target
+            target.backends = dict()
+            constructor_name = '!{0}'.format(target.__name__)
+            log.debug("Adding YAML constructor for '%s' as '%s'",
+                      target.__name__, constructor_name)
+            yaml.add_constructor(constructor_name, YAMLConstructor(target))
+
         self.target.backends[self.id_] = cls
         return cls
 register = RegisteredBackend
