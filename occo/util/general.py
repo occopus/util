@@ -5,7 +5,7 @@
 #
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
-           'ConfigurationError', 'Cleaner']
+           'ConfigurationError', 'Cleaner', 'wet_method']
 
 import itertools
 
@@ -95,3 +95,27 @@ class Cleaner(object):
         return [self.bar if self.hold_back_value(i)
                 else self.deep_copy(i)
                 for i in l]
+
+class WetMethod(object):
+    """
+    Method decorator for classes performing critical operations.
+    The wrapped method will _not_ be executed if the object has a member
+    `dry_run' set to true.
+    In this case, a constant default value will be returned.
+    """
+
+    def __init__(self, def_retval=None):
+        self.def_retval = def_retval
+
+    def __call__(self, fun):
+        import functools
+
+        @functools.wraps(fun)
+        def wethod(fun_self_, *args, **kwargs):
+            if fun_self_.dry_run:
+                return self.def_retval
+            else:
+                return fun(fun_self_, *args, **kwargs)
+
+        return wethod
+wet_method = WetMethod
