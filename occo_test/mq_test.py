@@ -175,12 +175,6 @@ class MQConnectionTest(unittest.TestCase):
             log.error('%s', ex)
             log.exception('Error:')
 
-if __name__ == '__main__':
+def setup_module():
     import os
     log.info('PID: %d', os.getpid())
-    try:
-        unittest.main()
-    except KeyboardInterrupt:
-        log.debug('Ctrl-C Exiting.')
-    finally:
-        logging.shutdown()
