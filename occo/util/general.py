@@ -5,7 +5,8 @@
 #
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
-           'ConfigurationError', 'Cleaner', 'wet_method']
+           'ConfigurationError', 'Cleaner', 'wet_method',
+           'rel_to_file']
 
 import itertools
 
@@ -31,6 +32,19 @@ def coalesce(*args):
     return icoalesce(args)
 def flatten(iterable):
     return itertools.chain.from_iterable(iterable)
+
+def rel_to_file(relpath, basefile=None):
+    """
+    Returns the absolute version of relpath, assuming it's relative to the
+    given file (_not_ directory).
+    Default value for `basefile` is the __file__ of the caller.
+    """
+    from os.path import abspath, join, dirname
+    if not basefile:
+        # Default base path: path to the caller file
+        import inspect
+        basefile = inspect.currentframe().f_back.f_globals['__file__']
+    return abspath(join(dirname(basefile), relpath))
 
 def identity(*args):
     """Returns all arguments as-is"""

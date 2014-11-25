@@ -35,3 +35,5 @@ class CoalesceTest(unittest.TestCase):
     def test_flatten(self):
         l1, l2, l3 = [0, 1, 2, 3], [], [4, 5, 6]
         self.assertEqual(list(util.flatten([l1, l2, l3])), range(7))
+    def test_rel_to_file(self):
+        print util.rel_to_file('test.yaml')
