@@ -6,7 +6,7 @@
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
-           'rel_to_file']
+           'rel_to_file', 'cfg_file_path']
 
 import itertools
 
@@ -32,6 +32,16 @@ def coalesce(*args):
     return icoalesce(args)
 def flatten(iterable):
     return itertools.chain.from_iterable(iterable)
+
+def cfg_file_path(filename, basedir='etc/occo'):
+    """
+    Returns the absolute path to `filename` based on sys.prefix and
+    basedir.
+
+    Basedir defaults to 'etc/occo'.
+    """
+    import os, sys
+    return os.path.join(sys.prefix, basedir, filename)
 
 def rel_to_file(relpath, basefile=None):
     """
