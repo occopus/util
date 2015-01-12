@@ -41,7 +41,9 @@ def cfg_file_path(filename, basedir='etc/occo'):
     Basedir defaults to 'etc/occo'.
     """
     import os, sys
-    return os.path.join(sys.prefix, basedir, filename)
+    return \
+        filename if os.path.isabs(filename) \
+        else os.path.join(sys.prefix, basedir, filename)
 
 def rel_to_file(relpath, basefile=None):
     """
