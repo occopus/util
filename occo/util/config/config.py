@@ -4,15 +4,20 @@
 # Configuration primitives for the SZTAKI Cloud Orchestrator
 #
 
+from __future__ import absolute_import
+
 """
 This module implements a configuration interface, with its main purpose
 being the simple merging of istatically configured and command line parameters.
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig',
+           'load_auth_data']
 
 import yaml
 import argparse
+from ...util import cfg_file_path
+import logging
 
 class Config(object):
     """
@@ -74,3 +79,21 @@ class DefaultYAMLConfig(DefaultConfig):
     """
     def __init__(self, config_string, **kwargs):
         DefaultConfig.__init__(self, yaml.load(config_string), **kwargs)
+
+def load_auth_data(auth_data):
+    """
+    Load authentication data from safe source.
+    """
+    log = logging.getLogger('occo.util')
+    if auth_data is None:
+        log.warning(
+            'Tried to resolve auth_data, but there is no such attribute')
+        return
+    if type(auth_data) is str:
+        if auth_data.startswith('file://'):
+            filename = cfg_file_path(auth_data[7:])
+            log.debug("Loading authentication form '%s'", filename)
+            with open(filename) as f:
+                return yaml.load(f)
+    # It's not safe to log auth_data. Should solve this another way.
+    raise NotImplementedError('Unknown auth_data format', auth_data)
