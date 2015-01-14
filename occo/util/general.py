@@ -9,6 +9,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'rel_to_file', 'cfg_file_path']
 
 import itertools
+import logging
 
 class ConfigurationError(Exception):
     """Raised by communication classes, if the given configuration is bad, or
@@ -139,6 +140,11 @@ class WetMethod(object):
         @functools.wraps(fun)
         def wethod(fun_self_, *args, **kwargs):
             if fun_self_.dry_run:
+                log = logging.getLogger('occo.util')
+                log.warning('Dry run: omitting method execution for %s.%s.%s',
+                            fun_self_.__class__.__module__,
+                            fun_self_.__class__.__name__,
+                            fun.__name__)
                 return self.def_retval
             else:
                 return fun(fun_self_, *args, **kwargs)
