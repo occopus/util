@@ -50,8 +50,8 @@ class MultiBackend(object):
     """Meta-class that automates backend selection based on configuration
     parameters.
 
-    Raises ConfigurationError, if `protocol' is not specified, or the protocol
-    specified does not exist.
+    Raises ConfigurationError, if ``protocol`` is not specified, or the
+    protocol specified does not exist.
 
     This is actually a factory-method design pattern, only with the factory
     method being hidden in the __new__ method. This is only syntactical sugar.
