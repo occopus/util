@@ -27,6 +27,7 @@ instantiated from configuration files, without any support from the client code.
 Example classes:
 
 .. code-block:: python
+    :emphasize-lines: 1,6,14,20
 
     import occo.util.factory as factory
 
@@ -55,6 +56,7 @@ Example classes:
 Example configuration:
 
 .. code-block:: yaml
+    :emphasize-lines: 5,6
 
     app_config:
         something: nothing
