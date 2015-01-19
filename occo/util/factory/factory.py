@@ -58,7 +58,8 @@ class MultiBackend(object):
     Using this method, one can instantiate an, e.g., AsynchronProducer in the
     client code, but the created object will be the actual implementation.
 
-    For example:
+    For example::
+
         p = AsynchronProducer(protocol='amqp', ...)
         # This actually instantiates an MQAsynchronProducer.
     """
