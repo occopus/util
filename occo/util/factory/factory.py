@@ -5,6 +5,66 @@
 #
 
 """
+Generic implementation if the design pattern `Abstract Factory`_
+
+.. _`Abstract Factory`: http://en.wikipedia.org/wiki/Abstract_factory_pattern
+
+Generally, there will be an abstract interface class, defining what a specific
+class of backends can do. For example, in case of a graphical user interface,
+there may be a class called ``UI`` defining a method called ``create_button``. This interface is then implemented in several ways for several backends, e.g.
+``X_UI`` and ``WindowMaker_UI``, each implementing its own ``create_button``
+method. The Abstract Factory allows the dynamic creation of the right backend
+based on dynamic data, and allows us to extend the application with new
+backends, without touching the core code.
+
+This implementation of the Abstract Factory uses the constructor parameter
+``protocol`` to decide which backend to instantiate. It also re-defines the
+built-in ``__new__`` function to completely hide the multi-backend nature from
+the client code. This makes the client code shorter. It also allows us to define
+a single YAML constructor for a family of classes. That is, backends can be
+instantiated from configuration files, without any support from the client code.
+
+Example classes:
+
+.. code-block:: python
+
+    import occo.util.factory as factory
+
+    # The UI class is prepared to be an abstract factory,
+    # __new__ is overridden.
+    # A YAML constructor '!UI' is created.
+    @factory.MultiBackend
+    class UI(object):
+        def __init__(protocol, **kwargs):
+            do_something_with_kwargs()
+        def create_button(self):
+            raise NotImplementedError()
+
+    # The class is registered as a backend for protocol='X'
+    @factory.register(UI, 'X')
+    class X_UI(UI):
+        def create_button(self):
+            x_specific_create_button()
+
+    # The class is registered as a backend for protocol='wm'
+    @factory.register(UI, 'wm')
+    class WindowMaker_UI(UI)
+        def create_button(self):
+            windowmaker_create_button()
+
+Example configuration:
+
+.. code-block:: yaml
+
+    app_config:
+        something: nothing
+    other_config:
+        etc:
+            ui: !UI
+                protocol: X
+                backend: specific
+                configuration: data
+
 """
 
 __all__ = ['register', 'MultiBackend']
@@ -23,13 +83,7 @@ class YAMLConstructor(object):
                 else self.cls(**loader.construct_mapping(node, deep=True))
 
 class RegisteredBackend(object):
-    """Decorator class to register backends for the communication classes.
-
-    target: the target primitive, of which the decorated class is an
-            implementation
-    id_:    protocol identifier; an arbitrary string that identifies the
-            set of backends
-    """
+    """ Documentation below, at ``register`` because of autodoc """
     def __init__(self, target, id_):
         self.target = target
         self.id_ = id_
@@ -45,27 +99,25 @@ class RegisteredBackend(object):
         self.target.backends[self.id_] = cls
         return cls
 register = RegisteredBackend
+"""Decorator class to register backends for the abstract classes.
+
+:param target: the target primitive, of which the decorated class is an
+    implementation
+:param id_:    protocol identifier; an arbitrary string that identifies the
+    set of backends
+"""
 
 class MultiBackend(object):
     """Meta-class that automates backend selection based on configuration
     parameters.
 
-    Raises ConfigurationError, if ``protocol`` is not specified, or the
-    protocol specified does not exist.
-
-    This is actually a factory-method design pattern, only with the factory
-    method being hidden in the __new__ method. This is only syntactical sugar.
-    Using this method, one can instantiate an, e.g., AsynchronProducer in the
-    client code, but the created object will be the actual implementation.
-
-    For example::
-
-        p = AsynchronProducer(protocol='amqp', ...)
-        # This actually instantiates an MQAsynchronProducer.
+    :raises ConfigurationError: if ``protocol`` is not specified, or the
+        protocol specified does not exist.
     """
     def __new__(cls, *args, **kwargs):
         if not 'protocol' in kwargs:
-            raise util.ConfigurationError('protocol', 'Missing protocol specification')
+            raise util.ConfigurationError(
+                'protocol', 'Missing protocol specification')
 
         protocol = kwargs['protocol']
         if not protocol in cls.backends:
