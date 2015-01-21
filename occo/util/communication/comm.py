@@ -1,16 +1,16 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Communication primitives for the SZTAKI Cloud Orchestrator
-#
 
-"""
+""" Communication primitives for the SZTAKI Cloud Orchestrator
+
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
+
 This module contains the abstract interfaces that are used by the OCCO
 components. All abstract interfaces must be implemented by backends (actual
 implementations) in other modules. Each backend must be registered, so
 selecting and instantiating the right backend can be done automatically.
 
-.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 .. todo:: Refactor: extract errors to dedicated error module.
 """
 

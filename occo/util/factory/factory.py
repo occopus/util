@@ -1,13 +1,13 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Communication primitives for the SZTAKI Cloud Orchestrator
-#
 
 """
 Generic implementation if the design pattern `Abstract Factory`_
 
 .. _`Abstract Factory`: http://en.wikipedia.org/wiki/Abstract_factory_pattern
+
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 
 Generally, there will be an abstract interface class, defining what a specific
 class of backends can do. For example, in case of a graphical user interface,

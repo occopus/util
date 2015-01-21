@@ -1,12 +1,14 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Configuration primitives for the SZTAKI Cloud Orchestrator
-#
 
 from __future__ import absolute_import
 
 """
+Configuration primitives for the SZTAKI Cloud Orchestrator.
+
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
+
 This module implements a configuration interface, with its main purpose
 being the simple merging of statically configured and command line parameters.
 
@@ -15,6 +17,7 @@ The interface proxies ``add_argument`` and ``parse_args calls to the underlying
 
 Basically, this module provides an ``ArgumentParser`` that can be pre-filled
 with statically defined data.
+
 """
 
 __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig',

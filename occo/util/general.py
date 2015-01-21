@@ -1,10 +1,10 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Configuration primitives for the SZTAKI Cloud Orchestrator
-#
 
 """This module contains general utility functions and classes.
+
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 """
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
@@ -31,9 +31,11 @@ def icoalesce(iterable, default=None):
     if isinstance(result, Exception):
         raise result
     return result
+
 def coalesce(*args):
     """Proxy function for icoalesce. Provided for convenience."""
     return icoalesce(args)
+
 def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
@@ -83,7 +85,7 @@ def nothing(*args, **kwargs):
     return False
 
 class Cleaner(object):
-    """Cleaner(self, hide_keys=[], hide_values=[], match_hide_keys=nothing, match_hide_values=nothing, bar='XXX')
+    """Hide sensitive information if necessary.
 
     Provides a ``deep_copy()`` method that deep-copies a data
     structure (nested lists and dicts), censoring specified information

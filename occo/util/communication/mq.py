@@ -1,13 +1,16 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# AMQP communication for the SZTAKI Cloud Orchestrator
-#
 
 """AMQP implementation of the abstract communication interfaces
 
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
+
 This module implements the abstract interfaces specified in
-occo.util.communication using the pika AMQP implementation.
+:mod:`occo.util.communication` using the pika_ AMQP_ implementation.
+
+.. _pika: https://pika.readthedocs.org/
+.. _AMQP: http://www.amqp.org/
 """
 
 __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
