@@ -24,7 +24,8 @@ the client code. This makes the client code shorter. It also allows us to define
 a single YAML constructor for a family of classes. That is, backends can be
 instantiated from configuration files, without any support from the client code.
 
-Example classes:
+Example classes
+~~~~~~~~~~~~~~~
 
 .. code-block:: python
     :emphasize-lines: 1,6,14,20
@@ -53,7 +54,10 @@ Example classes:
         def create_button(self):
             windowmaker_create_button()
 
-Example configuration:
+.. _factory_example_config:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: yaml
     :emphasize-lines: 5,6
@@ -113,10 +117,19 @@ class MultiBackend(object):
     """Meta-class that automates backend selection based on configuration
     parameters.
 
-    :raises ConfigurationError: if ``protocol`` is not specified, or the
-        protocol specified does not exist.
+    .. automethod:: __new__
     """
+
     def __new__(cls, *args, **kwargs):
+        """ Overrides :meth:`object.__new__` to implement the abstract factory.
+
+        This method will instantiate the correct backend identified by
+        ``protocol`` in ``kwargs``.
+
+        :raises occo.util.general.ConfigurationError: if ``protocol`` is not
+            specified in ``kwargs``, or the backend identified by ``protocol``
+            does not exist.
+        """
         if not 'protocol' in kwargs:
             raise util.ConfigurationError(
                 'protocol', 'Missing protocol specification')
