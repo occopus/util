@@ -292,6 +292,8 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         for the :class:`MQHandler` backend.
 
     .. warning:: Use context management with this class (:keyword:`with`).
+
+    .. automethod:: __call__
     """
     def __init__(self, processor, pargs=[], pkwargs={},
                  cancel_event=None, **config):
