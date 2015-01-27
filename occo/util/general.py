@@ -183,7 +183,7 @@ class Cleaner(object):
                 else self.deep_copy(i)
                 for i in l]
 
-class WetMethod(object):
+class wet_method(object):
     """
     Method decorator for classes performing critical operations.
     The wrapped method will _not_ be executed if the object has a member
@@ -193,7 +193,6 @@ class WetMethod(object):
     :param def_retval: The default value to be returned when the function
         execution is omitted.
     """
-
     def __init__(self, def_retval=None):
         self.def_retval = def_retval
 
@@ -213,4 +212,3 @@ class WetMethod(object):
                 return fun(fun_self_, *args, **kwargs)
 
         return wethod
-wet_method = WetMethod
