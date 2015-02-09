@@ -1,13 +1,17 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# AMQP communication for the SZTAKI Cloud Orchestrator
-#
 
 """AMQP implementation of the abstract communication interfaces
 
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
+
 This module implements the abstract interfaces specified in
-occo.util.communication using the pika AMQP implementation.
+:mod:`occo.util.communication.comm` using the pika_ implementation of the AMQP_
+protocol.
+
+.. _pika: https://pika.readthedocs.org/
+.. _AMQP: http://www.amqp.org/
 """
 
 __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
@@ -24,7 +28,7 @@ import yaml
 
 log = logging.getLogger('occo.util.comm.mq')
 
-# These implementations are identified with the following protocol key:
+#: These implementations are identified with the following protocol key:
 PROTOCOL_ID='amqp'
 
 class YAMLChannel(comm.CommChannel):
@@ -40,36 +44,23 @@ class YAMLChannel(comm.CommChannel):
 class MQHandler(object):
     """Common functions for all AMQP implementations.
 
-    Supports and requires context management. The connection is established
-    only when entering a context.
+    Supports and **requires context management** (:keyword:`with`). The
+    connection is established only when entering a context.
+
+    :keyword str host: Host name of the AMQP server.
+    :keyword int port: Port of the AMQP server. *Optional*, the default is ``5672``.
+    :keyword str vhost: Virtual host on the AMQP server to connect to.
+    :keyword str user: User name.
+    :keyword str password: Password.
+    :keyword str exchange: Default exchange, may be overridden by client methods.
+        *Optional*, the default is ``''``.
+    :keyword str routing_key: Default routing key, may be overridden by client
+        methods. *Optional*, the default is ``None``.
+    :keyword bool auto_delete: Auto delete queue. *Optional*, the default is ``False``.
+
+    Subclasses may require additional configuration parameters.
     """
     def __init__(self, **config):
-        """Initializes the AMQP object based on a dictionary configuration.
-
-        The configuration of the connection must be specified as keyword
-        arguments, including the following elements
-
-        host:
-          Host name of the AMQP server.
-        port:
-          Port of the AMQP server.
-          *Optional*, the default is ``5672``.
-        vhost:
-          Virtual host on the AMQP server to connect to.
-        user, password:
-          Authentication data
-        exchange:
-          Default exchange, may be overridden by client methods.
-          *Optional*, the default is ``''``.
-        routing_key:
-          Default routing_key, may be overridden by client methods.
-          *Optional*, the default is ``None``.
-        auto_delete:
-          Auto delete queue.
-          *Optional*, the default is ``False``.
-
-        Subclasses may require additional configuration parameters.
-        """
         try:
             log.debug('Config:\n%r', config)
             self.credentials = pika.PlainCredentials(
@@ -94,69 +85,97 @@ class MQHandler(object):
         """Selects the exchange in effect.
 
         The effective value is determined based on the following order:
-          1. The one specified as an argument
+          1. The one specified as the argument ``override``
           2. The default exchange of this object
-          3. ``''``
+              (``MQHandler.__init__(exchange=...)``)
+          3. Default: ``''``
         """
         return util.coalesce(override, self.default_exchange, '')
+
     def effective_routing_key(self, override=None):
         """Selects the routing key in effect.
 
         The effective value is determined based on the following order:
-          1. The one specified as an argument
+          1. The one specified as the argument ``override``
           2. The default routing key of this object
+             (``MQHandler.__init__(routing_key=...)``)
 
-        Assumed that a routing key is mandatory, this method raises
-        ``ValueError`` if no routing key is in effect.
+        :raises ValueError: if no routing key is in effect. (Assuming that a
+            routing key is mandatory.)
         """
         return util.coalesce(
             override, self.default_routing_key,
             ValueError('publish_message: Routing key is mandatory'))
 
     def declare_queue(self, queue_name, **kwargs):
-        """Declares a non-exclusive queue with the given name."""
+        """Declares a non-exclusive queue with the given name.
+
+        :param str queue_name: The queue to be declared.
+        :param `**kwargs`: Keyword arguments are passed through to the backend.
+        """
         self.channel.queue_declare(
             queue_name, auto_delete=self.auto_delete, **kwargs)
     def declare_response_queue(self, **kwargs):
-        """Declares an auto-named, exclusive queue."""
+        """Declares an auto-named, exclusive queue.
+
+        :param `**kwargs`: Keyword arguments are passed through to the backend.
+        """
         response = self.channel.queue_declare(exclusive=True, **kwargs)
         return response.method.queue
     def publish_message(self, msg, routing_key=None, exchange=None, **kwargs):
         """Publishes a message.
 
-        The message will be published to the exchange specified by
-        :func:`effective_exchange`, and with a routing key specified by
-        :func:`effective_routing_key`.
+        The message will be published to the exchange determined by
+        :meth:`effective_exchange`, and with a routing key determined by
+        :meth:`effective_routing_key`.
 
-        The message will be serialized for transfer.
-
-        ``kwargs`` are passed to ``basic_publish``.
+        :param object msg: The object to be delivered. The message will be
+            serialized for transfer.
+        :param routing_key: *Optional.* The routing key of the message.
+        :param exchange: *Optional.* The exchange to send the message to.
+        :param `**kwargs`: Keyword arguments are passed through to the backend.
         """
         self.channel.basic_publish(
             exchange=self.effective_exchange(exchange),
             routing_key=self.effective_routing_key(routing_key),
             body=self.serialize(msg),
             **kwargs)
+
     def setup_consumer(self, callback, queue, **kwargs):
         """Registers a consumer callback for the given queue.
 
-        ``kwargs`` are passed to ``basic_consume``.
+        :param callable callback: The callback function to be registered. The
+            signature of this callable must match that specified in the `pika
+            documentation`_.
+        :param queue: The name of the queue the callback function will be
+            registered with.
+        :param `**kwargs`: Keyword arguments are passed through to the backend.
+
+        .. _`pika documentation`: http://pika.readthedocs.org/en/latest/examples/blocking_consume.html
         """
         self.channel.basic_consume(callback, queue=queue, **kwargs)
 
 @factory.register(comm.AsynchronProducer, PROTOCOL_ID)
 class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.AsynchronProducer`
+    :class:`occo.util.communication.comm.AsynchronProducer` using
+    :class:`MQHandler`.
 
-    .. warning::
+    :param `**config`: Configuration for the :class:`MQHandler` backend.
 
-        Use context management with this class.
+    .. warning:: Use context management with this class (:keyword:`with`).
     """
     def __init__(self, **config):
         super(MQAsynchronProducer,self).__init__(**config)
 
     def push_message(self, msg, routing_key=None, **kwargs):
+        """Push a message to the backend queue.
+
+        :param object msg: The data to be delivered.
+        :param str routing_key: *Optional.* The routing key of the message. If
+            unspecified, the default routing key is used.
+        :param `**kwargs`: Keyword arguments are passed through to the backend.
+        """
         rkey = self.effective_routing_key(routing_key)
         self.declare_queue(rkey)
         self.publish_message(msg, routing_key=rkey, **kwargs)
@@ -164,16 +183,20 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
 @factory.register(comm.RPCProducer, PROTOCOL_ID)
 class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.RPCProducer`
+    :class:`occo.util.communication.comm.RPCProducer` using :class:`MQHandler`.
 
-    This class is thread safe through mutex access: at any time, only one
-    RPC call can be pending.
+    This class is thread safe by mut.ex. access: at any time, only one RPC call
+    can be pending. For multiple, simultaneous RPC calls, use multiple
+    instances of this class.
 
-    For multiple, simultaneous RPC calls, use multiple instances of this class.
+    :param `**config`: Configuration for the :class:`MQHandler` backend.
 
-    .. warning::
+    .. warning:: Use context management with this class (:keyword:`with`).
 
-        Use context management with this class.
+    .. todo:: It would be desirable to factor :meth:`__reset` out (it's ugly
+        and bug-prone). Two ideas: co-routines (:keyword:`yield`) and closures
+        (moving the callback inside :meth:`push_message`). We should think this
+        through and fix it sometime.
     """
     def __init__(self, **config):
         super(MQRPCProducer,self).__init__(**config)
@@ -182,8 +205,14 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
         self.__reset()
 
     def __reset(self):
+        """ Because the result arrives through a callback, these variables
+        cannot be method-local variables: the callback function and the
+        push_message function must share this data. This implies that these
+        variables must be reset between calls to avoid interference.
+        """
         self.response = None
         self.correlation_id = None
+
     def __enter__(self):
         super(MQRPCProducer, self).__enter__()
         self.callback_queue = self.declare_response_queue()
@@ -193,7 +222,10 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
         super(MQRPCProducer, self).__exit__(type, value, tb)
 
     def __on_response(self, ch, method, props, body):
-        """Callback function for RPC response."""
+        """Callback function for RPC response.
+
+        It sets the value of ``self.response``
+        """
         log.debug('RPC response callback; received message: %r, expecting %r',
                   props.correlation_id, self.correlation_id)
         if self.correlation_id == props.correlation_id:
@@ -202,6 +234,8 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
     def push_message(self, msg, routing_key=None, **kwargs):
         """Pushes a message and waits for response."""
 
+        # try-finally is used instead of 'with self.lock' to avoid a level of
+        # indent. But, when __reset will be factored out, this can be fixed.
         try:
             self.lock.acquire()
             self.correlation_id = str(uuid.uuid4())
@@ -223,29 +257,46 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
                 self.connection.process_data_events()
             log.debug('RPC push message: received response: %r', self.response)
 
+            # Process response
             response = self.deserialize(self.response)
             response.check()
 
             return response.data
         finally:
+            # Must reset variables used to communicate between this function
+            # and the callback. See class docstring.
             self.__reset()
             self.lock.release()
 
 @factory.register(comm.EventDrivenConsumer, PROTOCOL_ID)
 class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
     """AMQP implementation of
-    :class:`occo.util.communication.comm.EventDrivenConsumer`
+    :class:`occo.util.communication.comm.EventDrivenConsumer` using
+    :class:`MQHandler`.
 
-    Supports being the target of a threading.Thread.
+    Supports being the target of a :class:`threading.Thread`.
 
-    .. warning::
+    :param callable processor: The core function to be called when a message
+        arrives.  For details, see the documentation of
+        :class:`~occo.util.communication.comm.EventDrivenConsumer`.
+    :param list pargs: See
+        :class:`~occo.util.communication.comm.EventDrivenConsumer`.
+    :param list pkwargs:
+        See :class:`~occo.util.communication.comm.EventDrivenConsumer`.
+    :param threading.Event cancel_event: *Optional.* If specified, the method
+        :meth:`start_consuming` will not yield, but can be aborted by signaling
+        this event. If unspecified, the method will yield immediately after
+        processing a batch of data events, so it can be used in a
+        non-parellelized application.
+    :param `**config`: Configuration
+        for the :class:`MQHandler` backend.
 
-        Use context management with this class.
+    .. warning:: Use context management with this class (:keyword:`with`).
+
+    .. automethod:: __call__
     """
-    def __init__(self,
-                 processor, pargs=[], pkwargs={},
-                 cancel_event=None,
-                 **config):
+    def __init__(self, processor, pargs=[], pkwargs={},
+                 cancel_event=None, **config):
         super(MQEventDrivenConsumer, self).__init__(**config)
         comm.EventDrivenConsumer.__init__(
             self, processor=processor, pargs=pargs, pkwargs=pkwargs)
@@ -262,6 +313,13 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         self.setup_consumer(self.__callback, queue=self.queue)
 
     def __reply_if_rpc(self, response, props):
+        """This method sends a response *iff* the message was an RPC message.
+
+        :param response: The response to the query.
+        :type response: :class:`~occo.util.communication.comm.Response`
+        :param props: AMQP property bag of the query, possibly containing the
+            ``reply_to`` queue and the ``correlation_id``.
+        """
         if props.reply_to:
             log.debug('RPC message, responding')
             try:
@@ -276,6 +334,12 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
                 log.debug('Response sent')
 
     def __callback(self, ch, method, props, body):
+        """
+        Callback method for AMQP, as specified by the `pika documentation`_.
+
+        This method processes the incoming message as specified by
+        :class:`occo.util.communication.comm.EventDrivenConsumer`.
+        """
         log.debug('Message has arrived; message body:\n%s', body)
         try:
             try:
@@ -294,6 +358,8 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
             response = comm.Response(500, 'Internal Server Error')
             self.__reply_if_rpc(response, props)
         finally:
+            # ACK the message iff the processor implied that the query should
+            # be finalized.
             if response is None or response.finalize:
                 log.debug('Consumer: ACK-ing')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -301,16 +367,20 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
 
     @property
     def cancelled(self):
-        """Returns true iff consuming has been cancelled; based on
-        ``cancel_event``."""
+        """Returns True iff :meth:`start_consuming` should yield.
+
+        That is: if ``cancel_event`` is not specified at all, or if the
+        client has signalled through it.
+        """
         return not self.cancel_event or self.cancel_event.is_set()
 
     def start_consuming(self):
-        """Starts processing queue until cancelled."""
+        """Process queue events until :meth:`cancelled` signals the need to
+        yield."""
         while not self.cancelled:
             self.connection.process_data_events()
     def __call__(self):
-        """Entry point for ```threading.Thread.run()```"""
+        """Entry point for :meth:`threading.Thread.run()`"""
         try:
             return self.start_consuming()
         except KeyboardInterrupt:

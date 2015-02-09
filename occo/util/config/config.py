@@ -1,14 +1,23 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Configuration primitives for the SZTAKI Cloud Orchestrator
-#
 
 from __future__ import absolute_import
 
 """
+Configuration primitives for the SZTAKI Cloud Orchestrator.
+
+.. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
+
 This module implements a configuration interface, with its main purpose
-being the simple merging of istatically configured and command line parameters.
+being the simple merging of statically configured and command line parameters.
+
+The interface proxies ``add_argument`` and ``parse_args calls to the underlying
+``argparse.ArgumentParser`` object.
+
+Basically, this module provides an ``ArgumentParser`` that can be pre-filled
+with statically defined data.
+
 """
 
 __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig',
@@ -22,6 +31,8 @@ import logging
 class Config(object):
     """
     Loads and stores configuration based on command line arguments.
+
+    .. todo:: ``add_argument`` should be exposed.
     """
     def __init__(self, **kwargs):
         self.__parser = argparse.ArgumentParser(**kwargs)
@@ -40,21 +51,20 @@ class Config(object):
 
 class DefaultConfig(Config):
     """
-    Stores configuration based on a default configuration,
-    and command line arguments. This Config class uses the
-    DefaultsHelpFormatter to render the help message.
+    Stores configuration based on a default configuration, and command line
+    arguments. This Config class uses the DefaultsHelpFormatter to render the
+    help message.
 
     - First, the default configuration is loaded.
-    - Then, the command line arguments are parsed to override
-      configuration values if necessary.
+    - Then, the command line arguments are parsed to override configuration
+      values if necessary.
+
+    :param default_config: Dictionary containing defalt configuration. This
+        object will be copied.
+    :param kwargs: Keyword arguments to be passed to the underlying
+        :py:class:`argparse.ArgumentParser` object.
     """
     def __init__(self, default_config, **kwargs):
-        """
-        Creates a DefaultConfig parser using the default configuration
-        in default_config.
-
-        default_config must be an object that can be converted to type dict
-        """
         self.__dict__ = dict(default_config)
         kwargs.setdefault('formatter_class',
                           argparse.ArgumentDefaultsHelpFormatter)
@@ -62,10 +72,10 @@ class DefaultConfig(Config):
 
     def add_argument(self, name, *args, **kwargs):
         """
-        Adds an argument to this parser, with default values set
-        based on the default configuration.
+        Adds an argument to this parser, with default values set based on the
+        default configuration.
 
-        Uses the same syntax as ArgumentParser.add_argument
+        Uses the same syntax as :py:func:`argparse.ArgumentParser.add_argument`
         """
         basename = name[2:] if name.startswith('--') else name
         if hasattr(self, basename):
@@ -74,7 +84,7 @@ class DefaultConfig(Config):
 
 class DefaultYAMLConfig(DefaultConfig):
     """
-    This class works the same way as DefaultConfig.
+    This class works the same way as :class:`.DefaultConfig`.
     It loads the default configuration from a YAML configuration file.
     """
     def __init__(self, config_string, **kwargs):
@@ -83,6 +93,52 @@ class DefaultYAMLConfig(DefaultConfig):
 def load_auth_data(auth_data):
     """
     Load authentication data from safe source.
+
+    :param auth_data: Contains the information necessary to construct the data.
+    :returns: The resolved authentication data.
+    :raises NotImplementedError: if the type of ``auth_data`` cannot be handled.
+
+    Example use in YAML follows. This function will be called with
+    ``auth_data='file://auth_data.yaml'``. This will be interpreted as a path
+    to a YAML file (either absolute, relative to ``(system prefix)/etc/occo``).
+    The file will be loaded, and ``cloud_handler['auth_data']`` will be
+    replaced with its content.
+
+    .. code-block:: yaml
+        :emphasize-lines: 8,9
+
+        cloud_handler: !CloudHandler
+            protocol: boto
+            name: LPDS
+            dry_run: false
+            target:
+                endpoint: http://cfe2.lpds.sztaki.hu:4567
+                regionname: ROOT
+            auth_data: !!python/object/apply:occo.util.config.load_auth_data
+                - file://auth_data.yaml
+
+    The result will be something like:
+
+    .. code-block:: yaml
+        :emphasize-lines: 9,10
+
+        cloud_handler: !CloudHandler
+            protocol: boto
+            name: LPDS
+            dry_run: false
+            target:
+                endpoint: http://cfe2.lpds.sztaki.hu:4567
+                regionname: ROOT
+            auth_data:
+                access_key: username
+                secret_key: the_data_we_wanted_to_avoid_being_commited_into_git
+
+    Currently, the only input format supported is a string berginning with
+    ``'file://'``. Absolute paths must start with ``'/'``, that is:
+    ``'file:///'``
+
+    .. todo:: This algorithm is more generic. It can be used to implement
+        general importing in YAML.
     """
     log = logging.getLogger('occo.util')
     if auth_data is None:
@@ -95,5 +151,4 @@ def load_auth_data(auth_data):
             log.debug("Loading authentication form '%s'", filename)
             with open(filename) as f:
                 return yaml.load(f)
-    # It's not safe to log auth_data. Should solve this another way.
     raise NotImplementedError('Unknown auth_data format', auth_data)
