@@ -1,0 +1,3 @@
+anything: 1
+child2: !yaml_import
+    url: file://c2.yaml
