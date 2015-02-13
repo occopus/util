@@ -25,6 +25,7 @@ __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
 import yaml
 import argparse
 from ...util import cfg_file_path
+import occo.util.factory as factory
 import logging
 
 class Config(object):
@@ -146,16 +147,24 @@ class YAMLImport(object):
     def _load(self, **kwargs):
         log = logging.getLogger('occo.util')
 
-        if auth_data is None:
-            log.warning(
-                'Tried to resolve auth_data, but there is no such attribute')
-            return
-        if type(auth_data) is str:
-            if auth_data.startswith('file://'):
-                filename = cfg_file_path(auth_data[7:])
-                log.debug("Loading authentication form '%s'", filename)
-                with open(filename) as f:
-                    return yaml.load(f)
-        raise NotImplementedError('Unknown auth_data format', auth_data)
+        from urlparse import urlparse
+        url = urlparse(kwargs['url'])
+        log.info('%r', kwargs)
+        return YAMLImporter(protocol=url.scheme, **kwargs).load()
+
+
+class YAMLImporter(factory.MultiBackend):
+    def __init__(self, protocol, **data):
+        self.__dict__.update(data)
+    def load(self):
+        raise NotImplementedError()
+@factory.register(YAMLImporter, 'file')
+class FileImporter(YAMLImporter):
+    def load(self):
+        log = logging.getLogger('occo.util')
+        filename = cfg_file_path(self.url[7:])
+        log.debug("Importing YAML file: '%s'", filename)
+        with open(filename) as f:
+            return yaml.load(f)
 
 yaml.add_constructor('!yaml_import', YAMLImport())
