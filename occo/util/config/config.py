@@ -20,8 +20,7 @@ with statically defined data.
 
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig',
-           'load_auth_data']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
 
 import yaml
 import argparse
@@ -90,9 +89,9 @@ class DefaultYAMLConfig(DefaultConfig):
     def __init__(self, config_string, **kwargs):
         DefaultConfig.__init__(self, yaml.load(config_string), **kwargs)
 
-def load_auth_data(auth_data):
+class YAMLImport(object):
     """
-    Load authentication data from safe source.
+    Import an external YAML file and replace the current node with its content.
 
     :param auth_data: Contains the information necessary to construct the data.
     :returns: The resolved authentication data.
@@ -140,15 +139,23 @@ def load_auth_data(auth_data):
     .. todo:: This algorithm is more generic. It can be used to implement
         general importing in YAML.
     """
-    log = logging.getLogger('occo.util')
-    if auth_data is None:
-        log.warning(
-            'Tried to resolve auth_data, but there is no such attribute')
-        return
-    if type(auth_data) is str:
-        if auth_data.startswith('file://'):
-            filename = cfg_file_path(auth_data[7:])
-            log.debug("Loading authentication form '%s'", filename)
-            with open(filename) as f:
-                return yaml.load(f)
-    raise NotImplementedError('Unknown auth_data format', auth_data)
+
+    def __call__(self, loader, node):
+        return self._load(**loader.construct_mapping(node, deep=True))
+
+    def _load(self, **kwargs):
+        log = logging.getLogger('occo.util')
+
+        if auth_data is None:
+            log.warning(
+                'Tried to resolve auth_data, but there is no such attribute')
+            return
+        if type(auth_data) is str:
+            if auth_data.startswith('file://'):
+                filename = cfg_file_path(auth_data[7:])
+                log.debug("Loading authentication form '%s'", filename)
+                with open(filename) as f:
+                    return yaml.load(f)
+        raise NotImplementedError('Unknown auth_data format', auth_data)
+
+yaml.add_constructor('!yaml_import', YAMLImport())
