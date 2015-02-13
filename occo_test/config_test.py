@@ -31,3 +31,20 @@ class ConfigTest(unittest.TestCase):
         self.args.parse_args(testargs)
         self.assertEqual(self.args.setting_1, 55)
         self.assertEqual(self.args.setting_2, 'ttt')
+    def test_import(self):
+        import yaml
+        self.filename = util.rel_to_file('import_test/parent.yaml')
+        self.control_filename = util.rel_to_file('import_test/control.yaml')
+        with open(self.filename) as f:
+            data = yaml.load(f)
+        self.assertIn('child1', data)
+        child1 = data['child1']
+        self.assertIs(type(child1), dict)
+        self.assertIn('child2', child1)
+        child2 = data['child2']
+        self.assertIs(type(child2), dict)
+        self.assertIn('dataaa', child2)
+        self.assertEqual(child2['dataaa'], 'this is it')
+        with open(self.control_filename) as f:
+            self.assertEqual(f.read(),
+                             yaml.dump(data, default_flow_style=False))
