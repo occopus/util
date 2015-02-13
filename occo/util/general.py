@@ -58,12 +58,22 @@ def cfg_file_path(filename, basedir='etc/occo'):
         filename if os.path.isabs(filename) \
         else os.path.join(sys.prefix, basedir, filename)
 
-def rel_to_file(relpath, basefile=None):
+def rel_to_file(relpath, basefile=None, d_stack_frame=0):
     """
     Returns the absolute version of ``relpath``, assuming it's relative to the
-    given file (_not_ directory).
+    given *file* (_not_ directory).
 
-    Default value for ``basefile`` is the ``__file__`` of the caller.
+    :param str relpath: The relative path to be resolved.
+    :param str basefile: The base file which ``relpath`` is relative to.
+        If unset, ``relpath`` is resolved relative to a caller's ``__file__``
+        attribute.
+    :param int d_stack_frame: If ``basefile`` is unset, this parameter
+        specifies the order of the caller of whose ``__file__`` attribute
+        is used. I.e.: If 0, the immediate caller of this function is used. If
+        *n*\ >0, the *n*\ th caller in the stack is used.
+
+        With this parameter, libraries can use this function to resolve paths
+        relative to *their* caller.
 
     This function can mainly be used to find files (configuration, resources,
     etc.) relative to the module or executable that is calling it (e.g. test
@@ -73,7 +83,10 @@ def rel_to_file(relpath, basefile=None):
     if not basefile:
         # Default base path: path to the caller file
         import inspect
-        basefile = inspect.currentframe().f_back.f_globals['__file__']
+        fr = inspect.currentframe()
+        for i in xrange(d_stack_frame+1):
+            fr = fr.f_back
+        basefile = fr.f_globals['__file__']
     return abspath(join(dirname(basefile), relpath))
 
 def identity(*args):
