@@ -24,7 +24,7 @@ __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
 
 import yaml
 import argparse
-from ...util import cfg_file_path
+from ...util import rel_to_file
 import occo.util.factory as factory
 import logging
 
@@ -139,6 +139,8 @@ class YAMLImport(object):
 
     .. todo:: This algorithm is more generic. It can be used to implement
         general importing in YAML.
+
+    .. todo:: Update documentation.
     """
 
     def __call__(self, loader, node):
@@ -146,11 +148,12 @@ class YAMLImport(object):
 
     def _load(self, **kwargs):
         log = logging.getLogger('occo.util')
+        log.debug(yaml.dump(self, default_flow_style=False))
 
         from urlparse import urlparse
         url = urlparse(kwargs['url'])
         log.info('%r', kwargs)
-        return YAMLImporter(protocol=url.scheme, **kwargs).load()
+        return YAMLImporter(protocol=url.scheme, **kwargs)._load('alma')
 
 
 class YAMLImporter(factory.MultiBackend):
@@ -160,9 +163,11 @@ class YAMLImporter(factory.MultiBackend):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def load(self):
+    def _load(self, basefile):
         log = logging.getLogger('occo.util')
-        filename = cfg_file_path(self.url[7:])
+        # TODO This should be relative to the importing config file,
+        #      not the caller.
+        filename = rel_to_file(self.url[7:], basefile)
         log.debug("Importing YAML file: '%s'", filename)
         with open(filename) as f:
             return yaml.load(f)
