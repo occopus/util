@@ -20,12 +20,12 @@ with statically defined data.
 
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig',
-           'load_auth_data']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
 
 import yaml
 import argparse
-from ...util import cfg_file_path
+from ...util import rel_to_file, cfg_file_path
+import occo.util.factory as factory
 import logging
 
 class Config(object):
@@ -90,19 +90,29 @@ class DefaultYAMLConfig(DefaultConfig):
     def __init__(self, config_string, **kwargs):
         DefaultConfig.__init__(self, yaml.load(config_string), **kwargs)
 
-def load_auth_data(auth_data):
+class YAMLImport(object):
     """
-    Load authentication data from safe source.
+    YAML constructor. Import an external YAML file and replace the current node
+    with its content.
 
-    :param auth_data: Contains the information necessary to construct the data.
-    :returns: The resolved authentication data.
-    :raises NotImplementedError: if the type of ``auth_data`` cannot be handled.
+    The mapping must contain a node called 'url'. The schema of the URL will
+    determine how the mapping will be interpreted.
 
-    Example use in YAML follows. This function will be called with
-    ``auth_data='file://auth_data.yaml'``. This will be interpreted as a path
-    to a YAML file (either absolute, relative to ``(system prefix)/etc/occo``).
-    The file will be loaded, and ``cloud_handler['auth_data']`` will be
-    replaced with its content.
+    The following schema are supported:
+
+        ``file``
+
+            Reads and parses a YAML file specified by the URL. The path can be
+            either absolute or relative; e.g.: ``file:///etc/global_config`` or
+            ``file://global_config``.
+
+            In case the path is relative, it is interpreted as being relative
+            to the OCCO configuration directory: ``$PREFIX/etc/occo``.
+
+            .. todo:: The ideal behaviour would be to interpret relative paths
+                as being relative to the file referencing it (the current
+                file). However, this information is not present when parsing
+                the YAML mapping.
 
     .. code-block:: yaml
         :emphasize-lines: 8,9
@@ -114,41 +124,36 @@ def load_auth_data(auth_data):
             target:
                 endpoint: http://cfe2.lpds.sztaki.hu:4567
                 regionname: ROOT
-            auth_data: !!python/object/apply:occo.util.config.load_auth_data
-                - file://auth_data.yaml
-
-    The result will be something like:
-
-    .. code-block:: yaml
-        :emphasize-lines: 9,10
-
-        cloud_handler: !CloudHandler
-            protocol: boto
-            name: LPDS
-            dry_run: false
-            target:
-                endpoint: http://cfe2.lpds.sztaki.hu:4567
-                regionname: ROOT
-            auth_data:
-                access_key: username
-                secret_key: the_data_we_wanted_to_avoid_being_commited_into_git
-
-    Currently, the only input format supported is a string berginning with
-    ``'file://'``. Absolute paths must start with ``'/'``, that is:
-    ``'file:///'``
-
-    .. todo:: This algorithm is more generic. It can be used to implement
-        general importing in YAML.
+            auth_data: !yaml_import
+                url: file://auth_data.yaml
     """
-    log = logging.getLogger('occo.util')
-    if auth_data is None:
-        log.warning(
-            'Tried to resolve auth_data, but there is no such attribute')
-        return
-    if type(auth_data) is str:
-        if auth_data.startswith('file://'):
-            filename = cfg_file_path(auth_data[7:])
-            log.debug("Loading authentication form '%s'", filename)
-            with open(filename) as f:
-                return yaml.load(f)
-    raise NotImplementedError('Unknown auth_data format', auth_data)
+
+    def __call__(self, loader, node):
+        return self._load(**loader.construct_mapping(node, deep=True))
+
+    def _load(self, **kwargs):
+        log = logging.getLogger('occo.util')
+        log.debug(yaml.dump(self, default_flow_style=False))
+
+        from urlparse import urlparse
+        url = urlparse(kwargs['url'])
+        log.info('%r', kwargs)
+        return YAMLImporter(protocol=url.scheme, **kwargs)._load('alma')
+
+
+class YAMLImporter(factory.MultiBackend):
+    def __init__(self, protocol, **data):
+        self.__dict__.update(data)
+    def load(self):
+        raise NotImplementedError()
+@factory.register(YAMLImporter, 'file')
+class FileImporter(YAMLImporter):
+    def _load(self, basefile):
+        log = logging.getLogger('occo.util')
+        # TODO This should be relative to the importing config file
+        filename = cfg_file_path(self.url[7:])
+        log.debug("Importing YAML file: '%s'", filename)
+        with open(filename) as f:
+            return yaml.load(f)
+
+yaml.add_constructor('!yaml_import', YAMLImport())
