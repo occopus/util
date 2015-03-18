@@ -37,11 +37,12 @@ class ConfigTest(unittest.TestCase):
         self.control_filename = util.rel_to_file('import_test/control.yaml')
         with open(self.filename) as f:
             data = yaml.load(f)
+        print '%r'%data
         self.assertIn('child1', data)
         child1 = data['child1']
         self.assertIs(type(child1), dict)
         self.assertIn('child2', child1)
-        child2 = data['child2']
+        child2 = child1['child2']
         self.assertIs(type(child2), dict)
         self.assertIn('dataaa', child2)
         self.assertEqual(child2['dataaa'], 'this is it')
