@@ -76,6 +76,8 @@ class DefaultConfig(Config):
         default configuration.
 
         Uses the same syntax as :py:func:`argparse.ArgumentParser.add_argument`
+
+        See also: `Python docs <https://docs.python.org/2/library/argparse.html#the-add-argument-method>`_
         """
         basename = name[2:] if name.startswith('--') else name
         if hasattr(self, basename):
