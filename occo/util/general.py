@@ -9,7 +9,8 @@
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
-           'rel_to_file', 'cfg_file_path']
+           'rel_to_file', 'cfg_file_path',
+           'path_coalesce', 'file_locations']
 
 import itertools
 import logging
@@ -35,6 +36,51 @@ def icoalesce(iterable, default=None):
 def coalesce(*args):
     """Proxy function for icoalesce. Provided for convenience."""
     return icoalesce(args)
+
+def path_coalesce(*paths):
+    """
+    Finds the first file in the list that exists.
+
+    :returns: The first existing path or :data:`None`.
+
+    Can be used e.g. for defaulting a config file's path.
+    """
+    import os
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
+def file_locations(filename, *paths):
+    """
+    Maps the specified paths to the filenames in a generic way.
+
+    :param str filename: The basename or relative path of a file.
+    :param \*args paths: The list of possible base paths for the file.
+
+    :returns: An :func:`iterator <iter>` of the joined paths.
+
+    Each path will be prepended to the filename. The meaning of *prepended* is
+    different for different path types.  Currently the following types are
+    supported.
+
+        :class:`str`
+            Strings are simply ``os.path.join``-ed to the filename.
+        :func:`callable`
+            The object is called with the filename as a single argument.
+        :data:`None`
+            Treated the same way as ``''``.
+    """
+    import os
+    for p in paths:
+        if callable(p):
+            yield p(filename)
+        elif type(p) is str:
+            yield os.path.join(p, filename)
+        elif p is None:
+            yield filename
+        else:
+            raise NotImplementedError('Unknonw file path definition')
 
 def flatten(iterable):
     """Concatenate several iterables."""
