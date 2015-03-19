@@ -1,0 +1,2 @@
+child1: "anything: 1\nchild2: !yaml_import\n    url: file://c2.yaml\n"
+nothing: 0

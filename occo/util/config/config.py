@@ -97,6 +97,9 @@ class YAMLImport(object):
     YAML constructor. Import an external YAML file and replace the current node
     with its content.
 
+    :param callable parser: The parser function used to interpret the content
+        of the external file.
+
     The mapping must contain a node called 'url'. The schema of the URL will
     determine how the mapping will be interpreted.
 
@@ -130,6 +133,9 @@ class YAMLImport(object):
                 url: file://auth_data.yaml
     """
 
+    def __init__(self, parser):
+        self.parser = parser
+
     def __call__(self, loader, node):
         return self._load(**loader.construct_mapping(node, deep=True))
 
@@ -140,22 +146,29 @@ class YAMLImport(object):
         from urlparse import urlparse
         url = urlparse(kwargs['url'])
         log.info('%r', kwargs)
-        return YAMLImporter(protocol=url.scheme, **kwargs)._load('alma')
+        importer = YAMLImporter(
+            protocol=url.scheme, parser=self.parser, **kwargs)
+        return importer._load()
 
 
 class YAMLImporter(factory.MultiBackend):
-    def __init__(self, protocol, **data):
+    def __init__(self, protocol, parser, **data):
+        self.parser = parser
         self.__dict__.update(data)
-    def load(self):
+    def _load(self):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def _load(self, basefile):
+    def _load(self):
         log = logging.getLogger('occo.util')
         # TODO This should be relative to the importing config file
         filename = cfg_file_path(self.url[7:])
         log.debug("Importing YAML file: '%s'", filename)
         with open(filename) as f:
-            return yaml.load(f)
+            return self.parser(f)
 
-yaml.add_constructor('!yaml_import', YAMLImport())
+def filetext(f):
+    return f.read()
+
+yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
+yaml.add_constructor('!text_import', YAMLImport(filetext))

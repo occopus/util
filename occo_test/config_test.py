@@ -49,3 +49,12 @@ class ConfigTest(unittest.TestCase):
         with open(self.control_filename) as f:
             self.assertEqual(f.read(),
                              yaml.dump(data, default_flow_style=False))
+    def test_import_text(self):
+        import yaml
+        self.filename = util.rel_to_file('import_test/parent_text.yaml')
+        self.control_filename = util.rel_to_file('import_test/control_text.yaml')
+        with open(self.filename) as f:
+            data = yaml.load(f)
+        with open(self.control_filename) as f:
+            self.assertEqual(f.read(),
+                             yaml.dump(data, default_flow_style=False))
