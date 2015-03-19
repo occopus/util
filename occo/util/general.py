@@ -10,7 +10,8 @@
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
            'rel_to_file', 'cfg_file_path',
-           'path_coalesce', 'file_locations']
+           'path_coalesce', 'file_locations',
+           'curried']
 
 import itertools
 import logging
@@ -104,6 +105,54 @@ def cfg_file_path(filename, basedir='etc/occo'):
         filename if os.path.isabs(filename) \
         else os.path.join(sys.prefix, basedir, filename)
 
+def curried(func, **fixed_kwargs):
+    """
+    A universal closure factory: can be used for `currying
+    <http://en.wikipedia.org/wiki/Currying>`_.
+
+    Works only with named arguments. (Possibly with positional arguments too,
+    but that is untested.)
+
+    :param callable func: The core function; ``curried`` will return a proxy
+        for this callable.
+    :param kwargs: Any argument that needs to be preset for the core
+        function.
+    :returns: A :func:`callable` that acts as a proxy for the core function.
+        This proxy will call the core function with the parameter specified
+        in ``kwargs``, merged with actual parameters specified upon calling
+        the proxy.
+
+    .. code::
+
+        # Example
+
+        def add(x, y):
+            return x + y
+
+        add2 = curried(add, x=2)
+
+        add2(y=3) # Equivalent to add(x=2, y=3)
+
+        # More ``real'' example, the curried function used as parameter to
+        # other functions:
+        # util.file_locations needs callables with a single argument;
+        # curried fixes the basefile beforehand.
+
+        possible_locations = list(
+            util.file_locations('app.cfg',
+                '.',
+                util.curried(util.rel_to_file, basefile=__file__),
+                util.cfg_file_path))
+    """
+
+    import functools
+    @functools.wraps(func)
+    def proxy(*args, **override_kwargs):
+        kwargs = dict(fixed_kwargs)
+        kwargs.update(override_kwargs)
+        return func(*args, **kwargs)
+
+    return proxy
 def rel_to_file(relpath, basefile=None, d_stack_frame=0):
     """
     Returns the absolute version of ``relpath``, assuming it's relative to the
