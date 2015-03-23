@@ -17,10 +17,10 @@ The interface proxies ``add_argument`` and ``parse_args calls to the underlying
 
 Basically, this module provides an ``ArgumentParser`` that can be pre-filled
 with statically defined data.
-
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
+           'PythonImport', 'YAMLImport']
 
 import yaml
 import argparse
@@ -151,7 +151,6 @@ class YAMLImport(object):
             protocol=url.scheme, parser=self.parser, **kwargs)
         return importer._load()
 
-
 class YAMLImporter(factory.MultiBackend):
     def __init__(self, protocol, parser, **data):
         self.parser = parser
@@ -173,6 +172,36 @@ def filetext(f):
 
 yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
 yaml.add_constructor('!text_import', YAMLImport(filetext))
+
+class PythonImport:
+    """
+    YAML constructor. Appliable to string lists; imports all modules listed.
+
+    This can be used to pre-load factory-implementation modules at the
+    beginning of a YAML file. E.g.:
+    :class:`~occo.cloudhandler.backends.boto.BotoHandler`.
+
+    In effect, importing these modules from generic programs becomes
+    unnecessary; therefore these programs become future proof. For example:
+    they cannot know about future backends; and they don't need to.
+
+    Example:
+
+    .. code:: yaml
+        autoimport: !python_import
+            - occo.infobroker
+            - occo.infobroker.cloud_provider
+            - occo.infobroker.uds
+            - occo.cloudhandler
+            - occo.cloudhandler.backends.boto
+            - occo.infraprocessor
+        cloud_handler: !CloudHandler &ch
+            protocol: boto
+            name: LPDS
+    """
+    def __call__(self, loader, node):
+        return [__import__(module.value) for module in node.value]
+yaml.add_constructor('!python_import', PythonImport())
 
 def config(default_config=dict(), setup_args=None):
     default_config.setdefault('cfg', None)
