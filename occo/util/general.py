@@ -10,6 +10,7 @@
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
            'rel_to_file', 'cfg_file_path', 'config_base_dir',
+           'set_config_base_dir',
            'path_coalesce', 'file_locations',
            'curried']
 
@@ -86,6 +87,10 @@ def file_locations(filename, *paths):
 def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
+
+def set_config_base_dir(path):
+    global config_base_dir
+    config_base_dir = path
 
 config_base_dir = 'etc/occo'
 """The base directory for :func:`cfg_file_path`"""
