@@ -112,9 +112,14 @@ def cfg_file_path(filename, basedir=None):
     import os, sys
     if basedir is None:
         basedir = config_base_dir
-    return \
-        filename if os.path.isabs(filename) \
-        else os.path.join(sys.prefix, basedir, filename)
+
+    def paths():
+        yield filename
+        yield os.path.join(basedir, filename)
+        yield os.path.join(sys.prefix, basedir, filename)
+
+    return next(i for i in paths()
+                if os.path.isabs(i))
 
 def curried(func, **fixed_kwargs):
     """
