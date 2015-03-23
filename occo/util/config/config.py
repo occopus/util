@@ -20,11 +20,12 @@ with statically defined data.
 
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config']
 
 import yaml
 import argparse
-from ...util import rel_to_file, cfg_file_path
+from ...util import curried, cfg_file_path, rel_to_file, \
+    path_coalesce, file_locations
 import occo.util.factory as factory
 import logging
 
@@ -172,3 +173,39 @@ def filetext(f):
 
 yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
 yaml.add_constructor('!text_import', YAMLImport(filetext))
+
+def config(default_config=dict(), setup_args=None):
+    default_config.setdefault('cfg', None)
+
+    #
+    ## Find and load main config file
+    #
+    cfg = DefaultConfig(default_config)
+    cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+    if setup_args:
+        setup_args(cfg)
+    cfg.parse_args()
+
+    if not cfg.cfg_path:
+        possible_locations = file_locations('occo.yaml',
+            '.',
+            curried(rel_to_file, basefile=__file__),
+            cfg_file_path)
+
+        cfg.cfg_path = path_coalesce(*possible_locations)
+
+    with open(cfg.cfg_path) as f:
+        cfg.configuration = yaml.load(f)
+
+    #
+    ## Setup logging
+    #
+    import os
+    import logging
+    import logging.config
+    logging.config.dictConfig(cfg.configuration['logging'])
+
+    log = logging.getLogger('occo')
+    log.info('Staring up; PID = %d', os.getpid())
+
+    return cfg
