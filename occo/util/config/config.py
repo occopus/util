@@ -112,13 +112,8 @@ class YAMLImport(object):
             either absolute or relative; e.g.: ``file:///etc/global_config`` or
             ``file://global_config``.
 
-            In case the path is relative, it is interpreted as being relative
-            to the OCCO configuration directory: ``$PREFIX/etc/occo``.
-
-            .. todo:: The ideal behaviour would be to interpret relative paths
-                as being relative to the file referencing it (the current
-                file). However, this information is not present when parsing
-                the YAML mapping.
+            Relative paths are interpreted using
+            :func:`~occo.util.general.cfg_file_path`.
 
     .. code-block:: yaml
         :emphasize-lines: 8,9
@@ -179,7 +174,7 @@ class PythonImport:
 
     This can be used to pre-load factory-implementation modules at the
     beginning of a YAML file. E.g.:
-    :class:`~occo.cloudhandler.backends.boto.BotoHandler`.
+    :class:`~occo.cloudhandler.backends.boto.BotoCloudHandler`.
 
     In effect, importing these modules from generic programs becomes
     unnecessary; therefore these programs become future proof. For example:
@@ -187,7 +182,8 @@ class PythonImport:
 
     Example:
 
-    .. code:: yaml
+    .. code-block:: yaml
+
         autoimport: !python_import
             - occo.infobroker
             - occo.infobroker.cloud_provider
@@ -195,7 +191,9 @@ class PythonImport:
             - occo.cloudhandler
             - occo.cloudhandler.backends.boto
             - occo.infraprocessor
-        cloud_handler: !CloudHandler &ch
+
+        # The following would fail without (auto)importing the necessary modules
+        cloud_handler: !CloudHandler
             protocol: boto
             name: LPDS
     """
