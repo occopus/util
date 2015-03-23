@@ -92,7 +92,8 @@ def set_config_base_dir(path):
     global config_base_dir
     config_base_dir = path
 
-config_base_dir = 'etc/occo'
+import os
+config_base_dir = os.getcwd()
 """The base directory for :func:`cfg_file_path`"""
 
 def cfg_file_path(filename, basedir=None):
