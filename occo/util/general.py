@@ -9,7 +9,7 @@
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
-           'rel_to_file', 'cfg_file_path',
+           'rel_to_file', 'cfg_file_path', 'config_base_dir',
            'path_coalesce', 'file_locations',
            'curried']
 
@@ -87,12 +87,21 @@ def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
 
-def cfg_file_path(filename, basedir='etc/occo'):
+config_base_dir = 'etc/occo'
+"""The base directory for :func:`cfg_file_path`"""
+
+def cfg_file_path(filename, basedir=None):
     """
     Returns the absolute path to ``filename`` based on ``sys.prefix`` and
     ``basedir``. If ``filename`` is an absolute path, it is returned unchanged.
 
-    Basedir defaults to ``'etc/occo'``.
+    :param str filename: The path of the configuration file.
+    :param str basename: The basedir which ``filename`` is relative to.
+        If :data:`None`, the default is used, which can be set globally
+        through :data:`config_base_dir` or using
+        :class:`~occo.util.config.config.Config`.
+
+    Basedir defaults to ``'etc/occo'`` if unset.
 
     Example::
 
@@ -101,6 +110,8 @@ def cfg_file_path(filename, basedir='etc/occo'):
             cfg = occo.util.config.DefaultYAMLConfig(f)
     """
     import os, sys
+    if basedir is None:
+        basedir = config_base_dir
     return \
         filename if os.path.isabs(filename) \
         else os.path.join(sys.prefix, basedir, filename)

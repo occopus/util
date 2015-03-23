@@ -39,3 +39,20 @@ class CoalesceTest(unittest.TestCase):
         # TODO 1) this is not a test
         #      2) need to test d_stack_frame too
         print util.rel_to_file('test.yaml')
+    def test_cfg_path1(self):
+        import sys, os
+        self.assertEqual(util.cfg_file_path('alma'),
+                         os.path.join(sys.prefix, 'etc/occo', 'alma'))
+    def test_cfg_path2(self):
+        import sys, os
+        self.assertEqual(util.cfg_file_path('alma', '/etc/occo'),
+                         os.path.join('/etc/occo', 'alma'))
+    def test_cfg_path3(self):
+        import sys, os
+        self.assertEqual(util.cfg_file_path('alma', 'etc/occo'),
+                         os.path.join(os.getcwd(), 'etc/occo', 'alma'))
+    def test_cfg_path4(self):
+        import sys, os
+        util.config_base_dir = 'etc/occo_inst2'
+        self.assertEqual(util.cfg_file_path('alma'),
+                         os.path.join(sys.prefix, 'etc/occo_inst2', 'alma'))
