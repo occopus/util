@@ -134,7 +134,7 @@ class MultiBackend(object):
             raise util.ConfigurationError(
                 'protocol', 'Missing protocol specification')
 
-        protocol = kwargs['protocol']
+        protocol = kwargs.pop('protocol')
         if not protocol in cls.backends:
             raise util.ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
