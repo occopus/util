@@ -81,6 +81,13 @@ import logging
 
 log = logging.getLogger('occo.util')
 
+def split(mapping):
+    if not 'protocol' in mapping:
+        raise util.ConfigurationError(
+            'protocol', 'Missing protocol specification')
+    protocol = mapping.pop('protocol')
+    return mapping, protocol
+
 class YAMLConstructor(object):
     def __init__(self, cls):
         self.cls = cls
@@ -88,14 +95,10 @@ class YAMLConstructor(object):
         if type(node) is yaml.ScalarNode:
             return self.cls()
         else:
-            kwargs = loader.construct_mapping(node, deep=True)
-
-            if not 'protocol' in kwargs:
-                raise util.ConfigurationError(
-                    'protocol', 'Missing protocol specification')
+            kwargs, protocol = split(loader.construct_mapping(node, deep=True))
 
             try:
-                return MultiBackend.instantiate(self.cls, **kwargs)
+                return MultiBackend.instantiate(self.cls, protocol, **kwargs)
             except Exception as ex:
                 raise util.ConfigurationError(
                     'config',
@@ -133,7 +136,7 @@ class MultiBackend(object):
     """
 
     def __new__(cls, *args, **kwargs):
-        protocol = kwargs.pop('protocol')
+        kwargs, protocol = split(kwargs)
         return MultiBackend.instantiate(cls, protocol, *args, **kwargs)
 
     @staticmethod
