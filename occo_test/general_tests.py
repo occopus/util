@@ -42,7 +42,7 @@ class CoalesceTest(unittest.TestCase):
     def test_cfg_path1(self):
         import sys, os
         self.assertEqual(util.cfg_file_path('alma'),
-                         os.path.join(sys.prefix, 'etc/occo', 'alma'))
+                         os.path.join(os.getcwd(), 'alma'))
     def test_cfg_path2(self):
         import sys, os
         self.assertEqual(util.cfg_file_path('alma', '/etc/occo'),
