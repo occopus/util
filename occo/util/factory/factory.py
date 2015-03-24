@@ -73,7 +73,7 @@ Example configuration
 
 """
 
-__all__ = ['register', 'MultiBackend', 'instantiate']
+__all__ = ['register', 'MultiBackend']
 
 import occo.util as util
 import yaml
@@ -85,9 +85,16 @@ class YAMLConstructor(object):
     def __init__(self, cls):
         self.cls = cls
     def __call__(self, loader, node):
-        return self.cls() if type(node) is yaml.ScalarNode \
-                else instantiate(self.cls,
-                                 **loader.construct_mapping(node, deep=True))
+        if type(node) is yaml.ScalarNode:
+            return self.cls()
+        else:
+            kwargs = loader.construct_mapping(node, deep=True)
+
+            if not 'protocol' in kwargs:
+                raise util.ConfigurationError(
+                    'protocol', 'Missing protocol specification')
+
+            return MultiBackend.instantiate(self.cls, **kwargs)
 
 class RegisteredBackend(object):
     """ Documentation below, at ``register`` because of autodoc """
@@ -115,14 +122,22 @@ register = RegisteredBackend
 """
 
 class MultiBackend(object):
-    """Meta-class that automates backend selection based on configuration
-    parameters.
-
-    .. automethod:: __new__
+    """
+    Automates backend selection based on configuration parameters.
     """
 
     def __new__(cls, *args, **kwargs):
-        """ Overrides :meth:`object.__new__` to implement the abstract factory.
+        protocol = kwargs.pop('protocol')
+        return MultiBackend.instantiate(cls, protocol, *args, **kwargs)
+
+    @staticmethod
+    def instantiate(cls, protocol, *args, **kwargs):
+        """
+        Instantiates the given class while inhibiting implicit __init__ call.
+        This lets the factory __new__ hide the protocol specification from the
+        factory class.
+
+        Use this to instantiate factory classes from code.
 
         This method will instantiate the correct backend identified by
         ``protocol`` in ``kwargs``.
@@ -131,25 +146,16 @@ class MultiBackend(object):
             specified in ``kwargs``, or the backend identified by ``protocol``
             does not exist.
         """
-        if not 'protocol' in kwargs:
+        if not hasattr(cls, 'backends'):
             raise util.ConfigurationError(
-                'protocol', 'Missing protocol specification')
-
-        protocol = kwargs.pop('protocol')
+                'backends',
+                "The MultiBackend class '%s' has no registered backends."%cls.__name__)
         if not protocol in cls.backends:
             raise util.ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
+
         objclass = cls.backends[protocol]
         obj = object.__new__(cls.backends[protocol])
         objclass.__init__(obj, *args, **kwargs)
         return obj
-
-def instantiate(cls, *args, **kwargs):
-    """
-    Instantiates the given class while inhibiting implicit __init__ call.
-    This lets the factory __new__ hide the protocol specification from the
-    factory class.
-
-    Use this to instantiate factory classes from code.
-    """
-    return cls.__new__(cls, *args, **kwargs)
+        return cls.__new__(cls, *args, **kwargs)
