@@ -147,7 +147,7 @@ class YAMLImport(object):
         return importer._load()
 
 class YAMLImporter(factory.MultiBackend):
-    def __init__(self, protocol, parser, **data):
+    def __init__(self, parser, **data):
         self.parser = parser
         self.__dict__.update(data)
     def _load(self):
