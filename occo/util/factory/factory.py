@@ -94,7 +94,13 @@ class YAMLConstructor(object):
                 raise util.ConfigurationError(
                     'protocol', 'Missing protocol specification')
 
-            return MultiBackend.instantiate(self.cls, **kwargs)
+            try:
+                return MultiBackend.instantiate(self.cls, **kwargs)
+            except Exception as ex:
+                raise util.ConfigurationError(
+                    'config',
+                    'Abstract factory error while parsing YAML: %s'%ex,
+                    loader, node)
 
 class RegisteredBackend(object):
     """ Documentation below, at ``register`` because of autodoc """
