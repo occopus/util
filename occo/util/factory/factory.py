@@ -73,7 +73,7 @@ Example configuration
 
 """
 
-__all__ = ['register', 'MultiBackend']
+__all__ = ['register', 'MultiBackend', 'instantiate']
 
 import occo.util as util
 import yaml
@@ -86,7 +86,8 @@ class YAMLConstructor(object):
         self.cls = cls
     def __call__(self, loader, node):
         return self.cls() if type(node) is yaml.ScalarNode \
-                else self.cls(**loader.construct_mapping(node, deep=True))
+                else instantiate(self.cls,
+                                 **loader.construct_mapping(node, deep=True))
 
 class RegisteredBackend(object):
     """ Documentation below, at ``register`` because of autodoc """
@@ -138,4 +139,17 @@ class MultiBackend(object):
         if not protocol in cls.backends:
             raise util.ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
-        return object.__new__(cls.backends[protocol], *args, **kwargs)
+        objclass = cls.backends[protocol]
+        obj = object.__new__(cls.backends[protocol])
+        objclass.__init__(obj, *args, **kwargs)
+        return obj
+
+def instantiate(cls, *args, **kwargs):
+    """
+    Instantiates the given class while inhibiting implicit __init__ call.
+    This lets the factory __new__ hide the protocol specification from the
+    factory class.
+
+    Use this to instantiate factory classes from code.
+    """
+    return cls.__new__(cls, *args, **kwargs)
