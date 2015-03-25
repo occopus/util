@@ -17,14 +17,15 @@ The interface proxies ``add_argument`` and ``parse_args calls to the underlying
 
 Basically, this module provides an ``ArgumentParser`` that can be pre-filled
 with statically defined data.
-
 """
 
-__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig']
+__all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
+           'PythonImport', 'YAMLImport']
 
 import yaml
 import argparse
-from ...util import rel_to_file, cfg_file_path
+from ...util import curried, cfg_file_path, rel_to_file, \
+    path_coalesce, file_locations, set_config_base_dir
 import occo.util.factory as factory
 import logging
 
@@ -111,13 +112,8 @@ class YAMLImport(object):
             either absolute or relative; e.g.: ``file:///etc/global_config`` or
             ``file://global_config``.
 
-            In case the path is relative, it is interpreted as being relative
-            to the OCCO configuration directory: ``$PREFIX/etc/occo``.
-
-            .. todo:: The ideal behaviour would be to interpret relative paths
-                as being relative to the file referencing it (the current
-                file). However, this information is not present when parsing
-                the YAML mapping.
+            Relative paths are interpreted using
+            :func:`~occo.util.general.cfg_file_path`.
 
     .. code-block:: yaml
         :emphasize-lines: 8,9
@@ -150,9 +146,8 @@ class YAMLImport(object):
             protocol=url.scheme, parser=self.parser, **kwargs)
         return importer._load()
 
-
 class YAMLImporter(factory.MultiBackend):
-    def __init__(self, protocol, parser, **data):
+    def __init__(self, parser, **data):
         self.parser = parser
         self.__dict__.update(data)
     def _load(self):
@@ -172,3 +167,75 @@ def filetext(f):
 
 yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
 yaml.add_constructor('!text_import', YAMLImport(filetext))
+
+class PythonImport:
+    """
+    YAML constructor. Appliable to string lists; imports all modules listed.
+
+    This can be used to pre-load factory-implementation modules at the
+    beginning of a YAML file. E.g.:
+    :class:`~occo.cloudhandler.backends.boto.BotoCloudHandler`.
+
+    In effect, importing these modules from generic programs becomes
+    unnecessary; therefore these programs become future proof. For example:
+    they cannot know about future backends; and they don't need to.
+
+    Example:
+
+    .. code-block:: yaml
+
+        autoimport: !python_import
+            - occo.infobroker
+            - occo.infobroker.cloud_provider
+            - occo.infobroker.uds
+            - occo.cloudhandler
+            - occo.cloudhandler.backends.boto
+            - occo.infraprocessor
+
+        # The following would fail without (auto)importing the necessary modules
+        cloud_handler: !CloudHandler
+            protocol: boto
+            name: LPDS
+    """
+    def __call__(self, loader, node):
+        return [__import__(module.value) for module in node.value]
+yaml.add_constructor('!python_import', PythonImport())
+
+def config(default_config=dict(), setup_args=None):
+    default_config.setdefault('cfg', None)
+
+    #
+    ## Find and load main config file
+    #
+    cfg = DefaultConfig(default_config)
+    cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+    if setup_args:
+        setup_args(cfg)
+    cfg.parse_args()
+
+    if not cfg.cfg_path:
+        possible_locations = file_locations('occo.yaml',
+            '.',
+            curried(rel_to_file, basefile=__file__),
+            cfg_file_path)
+
+        cfg.cfg_path = path_coalesce(*possible_locations)
+
+    import os
+    set_config_base_dir(os.path.dirname(cfg.cfg_path))
+
+    with open(cfg.cfg_path) as f:
+        cfg.configuration = yaml.load(f)
+
+    #
+    ## Setup logging
+    #
+    import os
+    import logging
+    import logging.config
+    logging.config.dictConfig(cfg.configuration['logging'])
+
+    log = logging.getLogger('occo')
+    log.info('Staring up; PID = %d', os.getpid())
+
+    return cfg

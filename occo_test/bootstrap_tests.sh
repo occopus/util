@@ -6,7 +6,7 @@ set -e
 # package-by-package.
 
 # These files to be automatically installed in the config dir.
-AUTO_COPY_FILES='import_test/*.yaml'
+AUTO_COPY_FILES='import_test/*.yaml comm_test_cfg.yaml'
 # If yes, all files are copied to the config dir directly. If no,
 # subdirectory structure is built too.
 FLAT=yes

@@ -9,9 +9,11 @@
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'ConfigurationError', 'Cleaner', 'wet_method',
-           'rel_to_file', 'cfg_file_path',
+           'rel_to_file', 'cfg_file_path', 'config_base_dir',
+           'set_config_base_dir',
            'path_coalesce', 'file_locations',
-           'curried']
+           'curried',
+           'logged']
 
 import itertools
 import logging
@@ -87,12 +89,24 @@ def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
 
-def cfg_file_path(filename, basedir='etc/occo'):
+def set_config_base_dir(path):
+    global config_base_dir
+    config_base_dir = path
+
+import os
+config_base_dir = os.getcwd()
+"""The base directory for :func:`cfg_file_path`. Default values is the CWD."""
+
+def cfg_file_path(filename, basedir=None):
     """
     Returns the absolute path to ``filename`` based on ``sys.prefix`` and
     ``basedir``. If ``filename`` is an absolute path, it is returned unchanged.
 
-    Basedir defaults to ``'etc/occo'``.
+    :param str filename: The path of the configuration file.
+    :param str basename: The basedir which ``filename`` is relative to.
+        If :data:`None`, the default is used, which can be set globally
+        through :data:`config_base_dir` or using
+        :class:`~occo.util.config.config.Config`.
 
     Example::
 
@@ -101,9 +115,16 @@ def cfg_file_path(filename, basedir='etc/occo'):
             cfg = occo.util.config.DefaultYAMLConfig(f)
     """
     import os, sys
-    return \
-        filename if os.path.isabs(filename) \
-        else os.path.join(sys.prefix, basedir, filename)
+    if basedir is None:
+        basedir = config_base_dir
+
+    def paths():
+        yield filename
+        yield os.path.join(basedir, filename)
+        yield os.path.join(sys.prefix, basedir, filename)
+
+    return next(i for i in paths()
+                if os.path.isabs(i))
 
 def curried(func, **fixed_kwargs):
     """
@@ -320,3 +341,52 @@ class wet_method(object):
                 return fun(fun_self_, *args, **kwargs)
 
         return wethod
+
+class logged(object):
+    """
+    Auxiliary decorator for debugging functions.
+
+    With this decorator, rewriting ``return <<<expression>>>`` statements to
+    ``retval = <<<expression>>>; log(retval); return retval`` when debugging
+    becomes unecessary.
+
+    The decorator can be disabled; in which case calling the method has no
+    overhead.
+
+    :param logger: A logging method of a logging object. E.g.  ``log.debug``.
+    :param bool disabled: Disables this decorator. I.e.: when
+        disabled, this decorator becomes an identity function.
+    :param str prefix: Log record prefix for all generated log records.
+    :param str postfix: Log record postfix for all generated log records.
+
+    Logging can be globally enabled by setting ``logged.disabled`` to
+    :data:`False`.
+
+    .. warning:: This logging is not secure. Secrets provided for or generated
+        by the decorated function are recorded in the logs.
+
+    """
+
+    disabled = True
+
+    def __init__(self, logger_method, disabled=False, prefix='', postfix=''):
+        self.logger_method, self.disabled, self.prefix, self.postfix = \
+            logger_method, disabled, prefix, postfix
+
+    def __call__(self, fun):
+        if logged.disabled or self.disabled:
+            return fun
+
+        import functools
+        log = self.logger_method
+
+        @functools.wraps(fun)
+        def wrapper(fun_self_, *args, **kwargs):
+            funcdef = '[{0}; {1}; {2}]'.format(fun.__name__, args, kwargs)
+            log('%sFunction call: %s%s', self.prefix, funcdef, self.prefix)
+            retval = fun(fun_self_, *args, **kwargs)
+            log('%sFunction result: %s -> [%r]%s',
+                self.prefix, funcdef, retval, self.prefix)
+            return retval
+
+        return wrapper
