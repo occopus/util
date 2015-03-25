@@ -167,4 +167,3 @@ class MultiBackend(object):
         obj = object.__new__(cls.backends[protocol])
         objclass.__init__(obj, *args, **kwargs)
         return obj
-        return cls.__new__(cls, *args, **kwargs)
