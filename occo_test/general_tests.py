@@ -41,14 +41,20 @@ class CoalesceTest(unittest.TestCase):
         print util.rel_to_file('test.yaml')
     def test_cfg_path1(self):
         import sys, os
+        # Reset config path
+        util.set_config_base_dir(os.getcwd())
         self.assertEqual(util.cfg_file_path('alma'),
-                         os.path.join(sys.prefix, 'etc/occo', 'alma'))
+                         os.path.join(os.getcwd(), 'alma'))
     def test_cfg_path2(self):
         import sys, os
+        # Reset config path
+        util.set_config_base_dir(os.getcwd())
         self.assertEqual(util.cfg_file_path('alma', '/etc/occo'),
                          os.path.join('/etc/occo', 'alma'))
     def test_cfg_path3(self):
         import sys, os
+        # Reset config path
+        util.set_config_base_dir(os.getcwd())
         self.assertEqual(util.cfg_file_path('alma', 'etc/occo_inst1'),
                          os.path.join(sys.prefix, 'etc/occo_inst1', 'alma'))
     def test_cfg_path4(self):
