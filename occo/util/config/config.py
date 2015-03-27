@@ -208,7 +208,8 @@ def config(default_config=dict(), setup_args=None):
     ## Find and load main config file
     #
     cfg = DefaultConfig(default_config)
-    cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+    cfg.add_argument(name='--cfg', dest='cfg_path',
+                     type=cfg_file_path, required=True)
     if setup_args:
         setup_args(cfg)
     cfg.parse_args()
