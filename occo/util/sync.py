@@ -1,15 +1,23 @@
 #
 # Copyright (C) 2014 MTA SZTAKI
 #
-# Configuration primitives for the SZTAKI Cloud Orchestrator
-#
+
+"""
+Primitives for global synchronization.
+"""
 
 import threading
 
-exiting = None
+exiting = threading.Event()
+"""
+Globally available :class:`~threading.Event` object that can be used to signal
+threads that the application is exiting.
+"""
 
 def init():
-    global
-    exiting = threading.Event()
+    """
+    Initialize the synchronization framework.
 
-
+    Currently does nothing, is here for future-proofing.
+    """
+    pass
