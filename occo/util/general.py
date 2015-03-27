@@ -13,7 +13,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'set_config_base_dir',
            'path_coalesce', 'file_locations',
            'curried',
-           'logged']
+           'logged', 'yamldump']
 
 import itertools
 import logging
@@ -390,3 +390,7 @@ class logged(object):
             return retval
 
         return wrapper
+
+def yamldump(obj):
+    import yaml
+    return yaml.dump(obj, default_flow_style=False)
