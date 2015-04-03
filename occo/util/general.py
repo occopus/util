@@ -13,7 +13,8 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'set_config_base_dir',
            'path_coalesce', 'file_locations',
            'curried',
-           'logged', 'yamldump']
+           'logged', 'yamldump',
+           'f_raise']
 
 import itertools
 import logging
@@ -394,3 +395,11 @@ class logged(object):
 def yamldump(obj):
     import yaml
     return yaml.dump(obj, default_flow_style=False)
+
+
+def f_raise(ex):
+    """
+    Method to replace the raise statement so it can be used in lazy expressions
+    (``x if B else f_raise(...)``) or (``x or f_raise(...)``).
+    """
+    raise ex
