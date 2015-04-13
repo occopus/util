@@ -222,8 +222,7 @@ def config(default_config=dict(), setup_args=None):
 
         cfg.cfg_path = path_coalesce(*possible_locations)
 
-    import os
-    set_config_base_dir(os.path.dirname(cfg.cfg_path))
+    set_config_base_dir(cfg.cfg_path, use_dir=True)
 
     with open(cfg.cfg_path) as f:
         cfg.configuration = yaml.load(f)

@@ -90,9 +90,19 @@ def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
 
-def set_config_base_dir(path):
+def set_config_base_dir(path, use_dir=False):
+    """
+    Set the global config file base directory. Mainly used by ``!yaml_import``.
+    :param str path: Either the config base path or a file in it (depends on
+        ``use_dir``). The path will be normalized based on the CWD.
+    :param bool use_dir: ``path`` refers to a file, use the dirname of the
+        path.
+    """
     global config_base_dir
-    config_base_dir = path
+    import os
+    if use_dir:
+        path = os.path.dirname(path)
+    config_base_dir = os.path.abspath(path)
 
 import os
 config_base_dir = os.getcwd()
