@@ -218,7 +218,12 @@ def rel_to_file(relpath, basefile=None, d_stack_frame=0):
 
 def identity(*args):
     """Returns all arguments as-is"""
-    return tuple(args)
+    if len(args) == 0:
+        return None
+    elif len(args) == 1:
+        return args[0]
+    else:
+        return tuple(args)
 
 def nothing(*args, **kwargs):
     """Constant function: False"""
