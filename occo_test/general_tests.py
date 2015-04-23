@@ -61,4 +61,5 @@ class CoalesceTest(unittest.TestCase):
         import sys, os
         util.set_config_base_dir('etc/occo_inst2')
         self.assertEqual(util.cfg_file_path('alma'),
-                         os.path.join(sys.prefix, 'etc/occo_inst2', 'alma'))
+                         os.path.abspath(
+                             os.path.join('etc/occo_inst2', 'alma')))
