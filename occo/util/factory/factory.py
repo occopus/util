@@ -164,3 +164,8 @@ class MultiBackend(object):
         obj = object.__new__(cls.backends[protocol])
         objclass.__init__(obj, *args, **kwargs)
         return obj
+
+    @classmethod
+    def has_backend(cls, protocol):
+        return hasattr(cls, 'backends') \
+            and protocol in cls.backends
