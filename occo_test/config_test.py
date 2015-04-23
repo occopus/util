@@ -33,6 +33,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.args.setting_2, 'ttt')
     def test_import(self):
         import yaml
+        util.set_config_base_dir(util.rel_to_file('import_test'))
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
         with open(self.filename) as f:
@@ -51,6 +52,7 @@ class ConfigTest(unittest.TestCase):
                              yaml.dump(data, default_flow_style=False))
     def test_import_text(self):
         import yaml
+        util.set_config_base_dir(util.rel_to_file('import_test'))
         self.filename = util.rel_to_file('import_test/parent_text.yaml')
         self.control_filename = util.rel_to_file('import_test/control_text.yaml')
         with open(self.filename) as f:

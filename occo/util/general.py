@@ -93,6 +93,12 @@ def flatten(iterable):
 def set_config_base_dir(path, use_dir=False):
     """
     Set the global config file base directory. Mainly used by ``!yaml_import``.
+    The path specified will be stored as-is; if it is relative, it will not be
+    resolved.
+
+    Note that :fun:`cfg_file_path` will not resolve a relative base directory,
+    so the behaviour will depend on the caller.
+
     :param str path: Either the config base path or a file in it (depends on
         ``use_dir``). The path will be normalized based on the CWD.
     :param bool use_dir: ``path`` refers to a file, use the dirname of the
@@ -100,42 +106,48 @@ def set_config_base_dir(path, use_dir=False):
     """
     global config_base_dir
     import os
-    if use_dir:
-        path = os.path.dirname(path)
-    config_base_dir = os.path.abspath(path)
+    config_base_dir = os.path.dirname(path) if use_dir else path
 
 import os
-config_base_dir = os.getcwd()
+config_base_dir = None
 """The base directory for :func:`cfg_file_path`. Default values is the CWD."""
 
 def cfg_file_path(filename, basedir=None):
     """
     Returns the absolute path to ``filename`` based on ``sys.prefix`` and
-    ``basedir``. If ``filename`` is an absolute path, it is returned unchanged.
+    ``basedir``.
+
+    If the ``filename`` is absolute, it is treadted being relative to
+    ``sys.prefix``.
+
+    A relative ``filename`` will be resolved using a base directory:
+
+        1. The parameter ``basedir``
+        2. If ``basedir`` is unset, :data:`config_base_dir`.
+        3. If ``config_base_dir`` is unset, then the CWD.
+
+    The base directory path is assumed to be absolute. If it is relative,
+    it will not be resolved by this function.
 
     :param str filename: The path of the configuration file.
     :param str basename: The basedir which ``filename`` is relative to.
-        If :data:`None`, the default is used, which can be set globally
-        through :data:`config_base_dir` or using
-        :class:`~occo.util.config.config.Config`.
 
     Example::
 
-        with open(occo.util.cfg_file_path('test.yaml')) as f:
+        with open(occo.util.cfg_file_path('/etc/occo/test.yaml')) as f:
             # Opens (sys prefix)/etc/occo/test.yaml
             cfg = occo.util.config.DefaultYAMLConfig(f)
     """
     import os, sys
-    if basedir is None:
-        basedir = config_base_dir
+    pth = os.path
 
-    def paths():
-        yield filename
-        yield os.path.join(basedir, filename)
-        yield os.path.join(sys.prefix, basedir, filename)
-
-    return next(i for i in paths()
-                if os.path.isabs(i))
+    if pth.isabs(filename):
+        # Using `+` is necessary, as pth.join would simply omit sys.prefix
+        # because filename is absolute.
+        return pth.abspath(sys.prefix + filename)
+    else:
+        basedir = coalesce(basedir, config_base_dir, os.getcwd())
+        return pth.join(basedir, filename)
 
 def curried(func, **fixed_kwargs):
     """

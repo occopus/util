@@ -17,7 +17,7 @@ import logging.config
 import uuid
 import time
 
-util.set_config_base_dir('etc/occo')
+util.set_config_base_dir(__file__, use_dir=True)
 CFG_FILE=util.cfg_file_path('comm_test_cfg.yaml')
 with open(CFG_FILE) as cfg:
     cfg = config.DefaultYAMLConfig(cfg)
@@ -32,28 +32,23 @@ def dummy(*args, **kwargs):
 class MQBootstrapTest(unittest.TestCase):
     def setUp(self):
         self.test_config = cfg.default_mqconfig
-        self.fail_config = dict(extra='something')
         self.fail_config_2 = dict(protocol='amqp', processor=None)
     def test_inst(self):
         map(lambda (cls1, cls2): \
-                self.assertEqual(cls1(**self.test_config).__class__, cls2),
+                self.assertEqual(
+                    cls1.instantiate(**self.test_config).__class__,
+                    cls2),
             [(comm.AsynchronProducer, mq.MQAsynchronProducer),
              (comm.RPCProducer, mq.MQRPCProducer)])
     def test_inst_consumer(self):
         self.assertEqual(
-            comm.EventDrivenConsumer(
-                dummy, **self.test_config).__class__,
+            comm.EventDrivenConsumer.instantiate(
+                processor=dummy, **self.test_config).__class__,
             mq.MQEventDrivenConsumer)
-    def test_bad_inst(self):
-        def tst(cls):
-            with self.assertRaises(util.ConfigurationError):
-                cls(**self.fail_config)
-        map(tst, [comm.AsynchronProducer, comm.RPCProducer,
-                  comm.EventDrivenConsumer])
     def test_bad_amqp(self):
         def tst(cls):
             with self.assertRaises(util.ConfigurationError):
-                cls(**self.fail_config_2)
+                cls.instantiate(**self.fail_config_2)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
 
@@ -61,13 +56,15 @@ class MQConnectionTest(unittest.TestCase):
     def setUp(self):
         self.data = None
     def test_rpc_init_prod(self):
-        with comm.RPCProducer(**cfg.endpoints['producer_rpc']):
+        with comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc']):
             log.debug('Test connection producer_rpc')
     def test_async_init_prod(self):
-        with comm.AsynchronProducer(**cfg.endpoints['producer_async']):
+        with comm.AsynchronProducer.instantiate(
+                **cfg.endpoints['producer_async']):
             log.debug('Test connection producer_async')
     def test_init_consumer(self):
-        with comm.EventDrivenConsumer(dummy, **cfg.endpoints['consumer_rpc']):
+        with comm.EventDrivenConsumer.instantiate(
+                processor=dummy, **cfg.endpoints['consumer_rpc']):
             log.debug('Test connection consumer_rpc')
     def i_test_rpc(self):
         MSG = str(uuid.uuid4())
@@ -76,9 +73,10 @@ class MQConnectionTest(unittest.TestCase):
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
             return comm.Response(200, 'RE: %s'%msg)
-        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
-        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
-                                     **cfg.endpoints['consumer_rpc'])
+        p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_rpc'])
         with p, c:
             log.debug('RPC Creating thread object')
             t = threading.Thread(target=c)
@@ -111,9 +109,10 @@ class MQConnectionTest(unittest.TestCase):
         def consumer_core(msg, *args, **kwargs):
             log.debug('Double RPC Consumer: message has arrived')
             return comm.Response(200, 'RE: %s'%msg)
-        p = comm.RPCProducer(**cfg.endpoints['producer_rpc'])
-        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
-                                     **cfg.endpoints['consumer_rpc'])
+        p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_rpc'])
         with p, c:
             log.debug('Double RPC Creating thread object')
             t = threading.Thread(target=c)
@@ -152,9 +151,11 @@ class MQConnectionTest(unittest.TestCase):
             log.debug('Async Consumer: setting response event')
             r.set()
             log.debug('Async consumer: response event has been set')
-        p = comm.AsynchronProducer(**cfg.endpoints['producer_async'])
-        c = comm.EventDrivenConsumer(consumer_core, cancel_event=e,
-                                     **cfg.endpoints['consumer_async'])
+        p = comm.AsynchronProducer.instantiate(
+            **cfg.endpoints['producer_async'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_async'])
         try:
             with p, c:
                 log.debug('Async Creating thread object')
