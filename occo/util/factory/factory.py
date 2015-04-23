@@ -98,7 +98,7 @@ class YAMLConstructor(object):
             kwargs, protocol = split(loader.construct_mapping(node, deep=True))
 
             try:
-                return MultiBackend.instantiate(self.cls, protocol, **kwargs)
+                return self.cls.instantiate(protocol, **kwargs)
             except Exception as ex:
                 raise util.ConfigurationError(
                     'config',
@@ -135,11 +135,7 @@ class MultiBackend(object):
     Automates backend selection based on configuration parameters.
     """
 
-    def __new__(cls, *args, **kwargs):
-        kwargs, protocol = split(kwargs)
-        return MultiBackend.instantiate(cls, protocol, *args, **kwargs)
-
-    @staticmethod
+    @classmethod
     def instantiate(cls, protocol, *args, **kwargs):
         """
         Instantiates the given class while inhibiting implicit __init__ call.
@@ -155,6 +151,7 @@ class MultiBackend(object):
             specified in ``kwargs``, or the backend identified by ``protocol``
             does not exist.
         """
+
         if not hasattr(cls, 'backends'):
             raise util.ConfigurationError(
                 'backends',
