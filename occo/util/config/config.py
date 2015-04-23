@@ -142,7 +142,7 @@ class YAMLImport(object):
         from urlparse import urlparse
         url = urlparse(kwargs['url'])
         log.info('%r', kwargs)
-        importer = YAMLImporter(
+        importer = YAMLImporter.instantiate(
             protocol=url.scheme, parser=self.parser, **kwargs)
         return importer._load()
 
