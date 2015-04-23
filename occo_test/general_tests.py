@@ -42,24 +42,35 @@ class CoalesceTest(unittest.TestCase):
     def test_cfg_path1(self):
         import sys, os
         # Reset config path
-        util.set_config_base_dir(os.getcwd())
+        util.set_config_base_dir(None)
         self.assertEqual(util.cfg_file_path('alma'),
                          os.path.join(os.getcwd(), 'alma'))
     def test_cfg_path2(self):
         import sys, os
         # Reset config path
-        util.set_config_base_dir(os.getcwd())
+        util.set_config_base_dir(None)
         self.assertEqual(util.cfg_file_path('alma', '/etc/occo'),
                          os.path.join('/etc/occo', 'alma'))
     def test_cfg_path3(self):
         import sys, os
         # Reset config path
-        util.set_config_base_dir(os.getcwd())
-        self.assertEqual(util.cfg_file_path('alma', 'etc/occo_inst1'),
-                         os.path.join(sys.prefix, 'etc/occo_inst1', 'alma'))
+        util.set_config_base_dir('/etc/occo')
+        self.assertEqual(util.cfg_file_path('alma'),
+                         '/etc/occo/alma')
     def test_cfg_path4(self):
         import sys, os
-        util.set_config_base_dir('etc/occo_inst2')
-        self.assertEqual(util.cfg_file_path('alma'),
-                         os.path.abspath(
-                             os.path.join('etc/occo_inst2', 'alma')))
+        util.set_config_base_dir('/etc/occo')
+        self.assertEqual(util.cfg_file_path('alma', '/etc/occo2'),
+                         '/etc/occo2/alma')
+    def test_cfg_path5(self):
+        import sys, os
+        # Reset config path
+        util.set_config_base_dir(None)
+        self.assertEqual(util.cfg_file_path('/etc/occo/alma'),
+                         sys.prefix + '/etc/occo/alma')
+    def test_cfg_path6(self):
+        import sys, os
+        # Reset config path
+        util.set_config_base_dir(None)
+        self.assertEqual(util.cfg_file_path('/etc/occo/alma', 'anyth:ng'),
+                         sys.prefix + '/etc/occo/alma')
