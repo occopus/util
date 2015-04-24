@@ -201,15 +201,18 @@ class PythonImport:
         return [__import__(module.value) for module in node.value]
 yaml.add_constructor('!python_import', PythonImport())
 
-def config(default_config=dict(), setup_args=None):
+def config(default_config=dict(), setup_args=None, cfg_path=None):
     default_config.setdefault('cfg', None)
 
     #
     ## Find and load main config file
     #
     cfg = DefaultConfig(default_config)
-    cfg.add_argument(name='--cfg', dest='cfg_path',
-                     type=cfg_file_path, required=True)
+    if cfg_path:
+        cfg.cfg_path = cfg_path
+    else:
+        cfg.add_argument(name='--cfg', dest='cfg_path',
+                         type=cfg_file_path, required=True)
     if setup_args:
         setup_args(cfg)
     cfg.parse_args()
