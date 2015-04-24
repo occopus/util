@@ -90,23 +90,39 @@ def flatten(iterable):
     """Concatenate several iterables."""
     return itertools.chain.from_iterable(iterable)
 
-def set_config_base_dir(path, use_dir=False):
+def set_config_base_dir(path, use_dir=False, prefix=True):
     """
-    Set the global config file base directory. Mainly used by ``!yaml_import``.
-    The path specified will be stored as-is; if it is relative, it will not be
-    resolved.
+    Set the global config file base directory.
+
+    A relative path is resolved against the current-previous base directory.
+    See :fun:`cfg_file_path` for the exact algorithm.
+
+    An absolute path is treated being relative to sys.prefix, unless ``prefix``
+    is set to ``False``. This helps "jailing" applications using
+    ``cfg_file_path`` inside virtualenvs.
 
     Note that :fun:`cfg_file_path` will not resolve a relative base directory,
     so the behaviour will depend on the caller.
 
     :param str path: Either the config base path or a file in it (depends on
         ``use_dir``). The path will be normalized based on the CWD.
-    :param bool use_dir: ``path`` refers to a file, use the dirname of the
-        path.
+    :param bool use_dir: Convenience feature: ``path`` refers to a file, use
+        the dirname of the path.
+    :param bool prefix: If set to ``False``, the absolute path will not be
+        resolved/modified.
     """
-    global config_base_dir
-    import os
-    config_base_dir = os.path.dirname(path) if use_dir else path
+    if path is None:
+        config_base_dir = None
+    else:
+        global config_base_dir
+        import os, sys
+        d = os.path.dirname(path) if use_dir else path
+        if os.path.isabs(path):
+            if prefix:
+                d = sys.prefix + d
+        else:
+            d = cfg_file_path(d)
+        config_base_dir = d
 
 import os
 config_base_dir = None
