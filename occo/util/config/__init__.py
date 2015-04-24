@@ -27,6 +27,7 @@ import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
     path_coalesce, file_locations, set_config_base_dir
 import occo.util.factory as factory
+import os
 import logging
 
 class Config(object):
@@ -224,8 +225,8 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
             cfg_file_path)
 
         cfg.cfg_path = path_coalesce(*possible_locations)
-
-    set_config_base_dir(cfg.cfg_path, use_dir=True)
+    else:
+        cfg.cfg_path = cfg_file_path(cfg.cfg_path)
 
     with open(cfg.cfg_path) as f:
         cfg.configuration = yaml.load(f)
@@ -233,7 +234,6 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
     #
     ## Setup logging
     #
-    import os
     import logging
     import logging.config
     logging.config.dictConfig(cfg.configuration['logging'])
