@@ -215,7 +215,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
     #
     cfg = DefaultConfig(default_config)
     if cfg_path:
-        cfg.cfg_path = cfg_path
+        cfg.cfg_path = cfg_file_path(cfg_path)
     else:
         cfg.add_argument(name='--cfg', dest='cfg_path',
                          type=cfg_file_path, required=True)
@@ -230,8 +230,6 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
             cfg_file_path)
 
         cfg.cfg_path = path_coalesce(*possible_locations)
-    else:
-        cfg.cfg_path = cfg_file_path(cfg.cfg_path)
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
