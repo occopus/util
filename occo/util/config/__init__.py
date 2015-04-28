@@ -155,7 +155,7 @@ class YAMLImporter(factory.MultiBackend):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def _get_filename(loader):
+    def _get_filename(self, loader):
         if hasattr(loader, '_filename'):
             return os.path.dirname(getattr(loader, '_filename'))
         else:
