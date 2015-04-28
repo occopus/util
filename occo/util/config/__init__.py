@@ -91,8 +91,8 @@ class DefaultYAMLConfig(DefaultConfig):
     This class works the same way as :class:`.DefaultConfig`.
     It loads the default configuration from a YAML configuration file.
     """
-    def __init__(self, config_string, **kwargs):
-        DefaultConfig.__init__(self, yaml.load(config_string), **kwargs)
+    def __init__(self, config_file, **kwargs):
+        DefaultConfig.__init__(self, yaml_load_file(config_file), **kwargs)
 
 class YAMLImport(object):
     """
@@ -233,8 +233,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
     else:
         cfg.cfg_path = cfg_file_path(cfg.cfg_path)
 
-    with open(cfg.cfg_path) as f:
-        cfg.configuration = yaml.load(f)
+    cfg.configuration = yaml_load_file(cfg.cfg_path)
 
     #
     ## Setup logging

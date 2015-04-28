@@ -19,8 +19,7 @@ class ConfigTest(unittest.TestCase):
             complex_setting=dict(cs_1=3, cs_2=4, cs_3=5),
             list_setting=['a', 'b', 'c']
         )
-        with open(self.filename) as f:
-            self.args = cfg.DefaultYAMLConfig(f)
+        self.args = cfg.DefaultYAMLConfig(self.filename)
     def test_load(self):
         self.args.parse_args('')
         self.assertDictContainsSubset(self.ethalon, self.args.__dict__)
