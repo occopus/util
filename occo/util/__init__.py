@@ -444,15 +444,23 @@ def yaml_load_file(filename):
     information can be used by yaml_import and !file_import to resolve relative
     paths.
     """
+    import os
     from yaml.loader import Loader
-    with open(filename) as stream:
+    if filename == '-':
+        import sys
+        stream = sys.stdin
+        # The filename will be cut by dirname
+        filename = os.path.join(os.getcwd(), 'DUMMYFILENAME')
+    else:
+        stream = open(filename)
+
+    try:
         loader = Loader(stream)
-        import os
         loader._filename = os.path.abspath(filename)
-        try:
-            return loader.get_single_data()
-        finally:
-            loader.dispose()
+        return loader.get_single_data()
+    finally:
+        try: stream.close()
+        finally: loader.dispose()
 
 
 def f_raise(ex):
