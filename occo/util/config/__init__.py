@@ -155,16 +155,16 @@ class YAMLImporter(factory.MultiBackend):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def _load(self, loader):
-        log = logging.getLogger('occo.util')
-        import os
-        basepath = getattr(loader, '_filename', None)
-        if basepath:
-            basepath = os.path.dirname(basepath)
-        # TODO This should be relative to the importing config file
-        filename = cfg_file_path(self.url[7:], basepath)
-        log.debug("Importing YAML file: '%s'", filename)
+    def _get_filename(loader):
+        if hasattr(loader, '_filename'):
+            return os.path.dirname(getattr(loader, '_filename'))
+        else:
+            return None
 
+    def _load(self, loader):
+        filename = cfg_file_path(self.url[7:], self._get_filename(loader))
+        logging.getLogger('occo.util') \
+            .debug("Importing YAML file: '%s'", filename)
         return self.parser(filename)
 
 def filetext(filename):
