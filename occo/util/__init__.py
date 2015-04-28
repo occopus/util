@@ -124,7 +124,6 @@ def set_config_base_dir(path, use_dir=False, prefix=True):
             d = cfg_file_path(d)
         config_base_dir = d
 
-import os
 config_base_dir = None
 """The base directory for :func:`cfg_file_path`. Default values is the CWD."""
 
