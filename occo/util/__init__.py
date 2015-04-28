@@ -111,10 +111,10 @@ def set_config_base_dir(path, use_dir=False, prefix=True):
     :param bool prefix: If set to ``False``, the absolute path will not be
         resolved/modified.
     """
+    global config_base_dir
     if path is None:
         config_base_dir = None
     else:
-        global config_base_dir
         import os, sys
         d = os.path.dirname(path) if use_dir else path
         if os.path.isabs(path):
