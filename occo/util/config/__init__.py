@@ -25,7 +25,7 @@ __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
 import yaml
 import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
-    path_coalesce, file_locations, set_config_base_dir
+    path_coalesce, file_locations, set_config_base_dir, yaml_load_file
 import occo.util.factory as factory
 import os
 import logging
@@ -91,8 +91,8 @@ class DefaultYAMLConfig(DefaultConfig):
     This class works the same way as :class:`.DefaultConfig`.
     It loads the default configuration from a YAML configuration file.
     """
-    def __init__(self, config_string, **kwargs):
-        DefaultConfig.__init__(self, yaml.load(config_string), **kwargs)
+    def __init__(self, config_file, **kwargs):
+        DefaultConfig.__init__(self, yaml_load_file(config_file), **kwargs)
 
 class YAMLImport(object):
     """
@@ -134,9 +134,9 @@ class YAMLImport(object):
         self.parser = parser
 
     def __call__(self, loader, node):
-        return self._load(**loader.construct_mapping(node, deep=True))
+        return self._load(loader, **loader.construct_mapping(node, deep=True))
 
-    def _load(self, **kwargs):
+    def _load(self, loader, **kwargs):
         log = logging.getLogger('occo.util')
         log.debug(yaml.dump(self, default_flow_style=False))
 
@@ -145,28 +145,33 @@ class YAMLImport(object):
         log.info('%r', kwargs)
         importer = YAMLImporter.instantiate(
             protocol=url.scheme, parser=self.parser, **kwargs)
-        return importer._load()
+        return importer._load(loader)
 
 class YAMLImporter(factory.MultiBackend):
     def __init__(self, parser, **data):
         self.parser = parser
         self.__dict__.update(data)
-    def _load(self):
+    def _load(self, loader):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def _load(self):
-        log = logging.getLogger('occo.util')
-        # TODO This should be relative to the importing config file
-        filename = cfg_file_path(self.url[7:])
-        log.debug("Importing YAML file: '%s'", filename)
-        with open(filename) as f:
-            return self.parser(f)
+    def _get_filename(self, loader):
+        if hasattr(loader, '_filename'):
+            return os.path.dirname(getattr(loader, '_filename'))
+        else:
+            return None
 
-def filetext(f):
-    return f.read()
+    def _load(self, loader):
+        filename = cfg_file_path(self.url[7:], self._get_filename(loader))
+        logging.getLogger('occo.util') \
+            .debug("Importing YAML file: '%s'", filename)
+        return self.parser(filename)
 
-yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
+def filetext(filename):
+    with open(filename) as f:
+        return f.read()
+
+yaml.add_constructor('!yaml_import', YAMLImport(yaml_load_file))
 yaml.add_constructor('!text_import', YAMLImport(filetext))
 
 class PythonImport:
@@ -210,7 +215,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
     #
     cfg = DefaultConfig(default_config)
     if cfg_path:
-        cfg.cfg_path = cfg_path
+        cfg.cfg_path = cfg_file_path(cfg_path)
     else:
         cfg.add_argument(name='--cfg', dest='cfg_path',
                          type=cfg_file_path, required=True)
@@ -225,11 +230,8 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
             cfg_file_path)
 
         cfg.cfg_path = path_coalesce(*possible_locations)
-    else:
-        cfg.cfg_path = cfg_file_path(cfg.cfg_path)
 
-    with open(cfg.cfg_path) as f:
-        cfg.configuration = yaml.load(f)
+    cfg.configuration = yaml_load_file(cfg.cfg_path)
 
     #
     ## Setup logging

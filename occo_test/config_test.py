@@ -19,8 +19,7 @@ class ConfigTest(unittest.TestCase):
             complex_setting=dict(cs_1=3, cs_2=4, cs_3=5),
             list_setting=['a', 'b', 'c']
         )
-        with open(self.filename) as f:
-            self.args = cfg.DefaultYAMLConfig(f)
+        self.args = cfg.DefaultYAMLConfig(self.filename)
     def test_load(self):
         self.args.parse_args('')
         self.assertDictContainsSubset(self.ethalon, self.args.__dict__)
@@ -33,11 +32,9 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.args.setting_2, 'ttt')
     def test_import(self):
         import yaml
-        util.set_config_base_dir(util.rel_to_file('import_test'), prefix=False)
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
-        with open(self.filename) as f:
-            data = yaml.load(f)
+        data = util.yaml_load_file(self.filename)
         print '%r'%data
         self.assertIn('child1', data)
         child1 = data['child1']
@@ -52,11 +49,9 @@ class ConfigTest(unittest.TestCase):
                              yaml.dump(data, default_flow_style=False))
     def test_import_text(self):
         import yaml
-        util.set_config_base_dir(util.rel_to_file('import_test'), prefix=False)
         self.filename = util.rel_to_file('import_test/parent_text.yaml')
         self.control_filename = util.rel_to_file('import_test/control_text.yaml')
-        with open(self.filename) as f:
-            data = yaml.load(f)
+        data = util.yaml_load_file(self.filename)
         with open(self.control_filename) as f:
             self.assertEqual(f.read(),
                              yaml.dump(data, default_flow_style=False))

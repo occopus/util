@@ -438,6 +438,30 @@ def yamldump(obj):
     import yaml
     return yaml.dump(obj, default_flow_style=False)
 
+def yaml_load_file(filename):
+    """
+    Does the same as yaml.load, but also sets the filename on the loader. This
+    information can be used by yaml_import and !file_import to resolve relative
+    paths.
+    """
+    import os
+    from yaml.loader import Loader
+    if filename == '-':
+        import sys
+        stream = sys.stdin
+        # The filename will be cut by dirname
+        filename = os.path.join(os.getcwd(), 'DUMMYFILENAME')
+    else:
+        stream = open(filename)
+
+    try:
+        loader = Loader(stream)
+        loader._filename = os.path.abspath(filename)
+        return loader.get_single_data()
+    finally:
+        try: stream.close()
+        finally: loader.dispose()
+
 
 def f_raise(ex):
     """
