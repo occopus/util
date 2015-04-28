@@ -25,7 +25,7 @@ __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
 import yaml
 import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
-    path_coalesce, file_locations, set_config_base_dir
+    path_coalesce, file_locations, set_config_base_dir, yaml_load_file
 import occo.util.factory as factory
 import os
 import logging
@@ -134,9 +134,9 @@ class YAMLImport(object):
         self.parser = parser
 
     def __call__(self, loader, node):
-        return self._load(**loader.construct_mapping(node, deep=True))
+        return self._load(loader, **loader.construct_mapping(node, deep=True))
 
-    def _load(self, **kwargs):
+    def _load(self, loader, **kwargs):
         log = logging.getLogger('occo.util')
         log.debug(yaml.dump(self, default_flow_style=False))
 
@@ -145,28 +145,33 @@ class YAMLImport(object):
         log.info('%r', kwargs)
         importer = YAMLImporter.instantiate(
             protocol=url.scheme, parser=self.parser, **kwargs)
-        return importer._load()
+        return importer._load(loader)
 
 class YAMLImporter(factory.MultiBackend):
     def __init__(self, parser, **data):
         self.parser = parser
         self.__dict__.update(data)
-    def _load(self):
+    def _load(self, loader):
         raise NotImplementedError()
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
-    def _load(self):
+    def _load(self, loader):
         log = logging.getLogger('occo.util')
+        import os
+        basepath = getattr(loader, '_filename', None)
+        if basepath:
+            basepath = os.path.dirname(basepath)
         # TODO This should be relative to the importing config file
-        filename = cfg_file_path(self.url[7:])
+        filename = cfg_file_path(self.url[7:], basepath)
         log.debug("Importing YAML file: '%s'", filename)
-        with open(filename) as f:
-            return self.parser(f)
 
-def filetext(f):
-    return f.read()
+        return self.parser(filename)
 
-yaml.add_constructor('!yaml_import', YAMLImport(yaml.load))
+def filetext(filename):
+    with open(filename) as f:
+        return f.read()
+
+yaml.add_constructor('!yaml_import', YAMLImport(yaml_load_file))
 yaml.add_constructor('!text_import', YAMLImport(filetext))
 
 class PythonImport:
