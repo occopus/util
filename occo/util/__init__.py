@@ -469,3 +469,16 @@ def f_raise(ex):
     (``x if B else f_raise(...)``) or (``x or f_raise(...)``).
     """
     raise ex
+
+def basic_run_process(cmd, input_data=None):
+    if isinstance(cmd, basestring):
+        cmd = cmd.split()
+    import subprocess
+    sp = subprocess.Popen(cmd,
+                          stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
+    log.debug('Executing subprocess %r', cmd)
+    output = sp.communicate(input_data)
+    log.debug('Execution finished, returncode: %d', sp.returncode)
+    return sp.returncode, output[0], output[1]
