@@ -512,5 +512,5 @@ def do_request(url, method_name='get',
     log.error('HTTP response: %d (%s)', r.status_code, r.reason)
     if in_range_set(response.status_code, raise_on):
         r.raise_for_status()
-    r.success = in_range(r.status_code, [(200, 299)])
+    r.success = in_range(r.status_code, (200, 299))
     return r
