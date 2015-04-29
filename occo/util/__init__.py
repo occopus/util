@@ -485,10 +485,16 @@ def basic_run_process(cmd, input_data=None):
     log.debug('Execution finished, returncode: %d', sp.returncode)
     return sp.returncode, output[0], output[1]
 
+def in_range(n, rng_spec):
+    return (n == rng_spec) if type(rng_spec) is not tuple \
+        else (rng_spec[0] <= n <= rng_spec[1])
+
 def do_request(url, method_name='get',
                auth=None, data=None,
-               raise_on_status=True, timeout=10):
+               raise_on=[], timeout=10):
     """
+    :param raise_on: List of (tuples or integers) specifying the
+        HTTP status codes to be considered exceptional failure.
     :raises: :exc:`requests.exceptions.Timeout`
     :raises: :exc:`requests.exceptions.HTTPError`
     """
@@ -500,6 +506,6 @@ def do_request(url, method_name='get',
     log.debug('Trying URL %r with method %r', url, method_name)
     r = method(url, timeout=timeout, auth=auth, data=data)
     log.error('HTTP response: %d (%s)', r.status_code, r.reason)
-    if raise_on_status:
+    if any(in_range(response.status_code, r) for r in raise_on):
         r.raise_for_status()
     return r
