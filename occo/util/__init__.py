@@ -482,3 +482,20 @@ def basic_run_process(cmd, input_data=None):
     output = sp.communicate(input_data)
     log.debug('Execution finished, returncode: %d', sp.returncode)
     return sp.returncode, output[0], output[1]
+
+def do_request(url, method_name='get',
+               auth=None, data=None,
+               raise_on_status=True, timeout=10):
+    """
+    :raises: :exc:`requests.exceptions.Timeout`
+    :raises: :exc:`requests.exceptions.HTTPError`
+    """
+    import requests
+    method = getattr(requests, method_name)
+
+    log.debug('Trying URL %r with method %r', url, method_name)
+    r = method(url, timeout=timeout, auth=auth, data=data)
+    log.error('HTTP response: %d (%s)', r.status_code, r.reason)
+    if raise_on_status:
+        r.raise_for_status()
+    return r
