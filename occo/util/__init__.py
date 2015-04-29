@@ -490,6 +490,9 @@ def in_range(n, rng_spec):
     return (n == rng_spec) if type(rng_spec) is not tuple \
         else (rng_spec[0] <= n <= rng_spec[1])
 
+def in_range_set(n, range_spec):
+    return any(in_range(n, r) for r in range_spec)
+
 def do_request(url, method_name='get',
                auth=None, data=None,
                raise_on=[], timeout=10):
@@ -507,7 +510,7 @@ def do_request(url, method_name='get',
     log.debug('Trying URL %r with method %r', url, method_name)
     r = method(url, timeout=timeout, auth=auth, data=data)
     log.error('HTTP response: %d (%s)', r.status_code, r.reason)
-    if any(in_range(response.status_code, r) for r in raise_on):
+    if in_range_set(response.status_code, raise_on):
         r.raise_for_status()
     r.success = in_range(r.status_code, [(200, 299)])
     return r
