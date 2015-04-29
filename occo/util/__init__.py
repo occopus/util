@@ -14,7 +14,8 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'path_coalesce', 'file_locations',
            'curried',
            'logged', 'yamldump',
-           'f_raise']
+           'f_raise',
+           'basic_run_process', 'do_request', 'in_range']
 
 import itertools
 import logging
