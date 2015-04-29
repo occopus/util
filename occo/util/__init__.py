@@ -471,14 +471,16 @@ def f_raise(ex):
     raise ex
 
 def basic_run_process(cmd, input_data=None):
+    log = logging.getLogger('occo.util')
+
     if isinstance(cmd, basestring):
         cmd = cmd.split()
     import subprocess
+    log.debug('Executing subprocess %r', cmd)
     sp = subprocess.Popen(cmd,
                           stdin=subprocess.PIPE,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
-    log.debug('Executing subprocess %r', cmd)
     output = sp.communicate(input_data)
     log.debug('Execution finished, returncode: %d', sp.returncode)
     return sp.returncode, output[0], output[1]
@@ -490,6 +492,8 @@ def do_request(url, method_name='get',
     :raises: :exc:`requests.exceptions.Timeout`
     :raises: :exc:`requests.exceptions.HTTPError`
     """
+    log = logging.getLogger('occo.util')
+
     import requests
     method = getattr(requests, method_name)
 
