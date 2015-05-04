@@ -15,7 +15,8 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'curried',
            'logged', 'yamldump',
            'f_raise',
-           'basic_run_process', 'do_request', 'in_range']
+           'basic_run_process', 'do_request', 'in_range',
+           'HTTPTimeout', 'HTTPError', 'HTTPStatusRange']
 
 import itertools
 import logging
@@ -493,18 +494,29 @@ def in_range(n, rng_spec):
 def in_range_set(n, range_spec):
     return any(in_range(n, r) for r in range_spec)
 
+import requests
+HTTPTimeout = requests.exceptions.Timeout
+HTTPError = requests.exceptions.HTTPError
+
+class HTTPStatusRange(object):
+    CLIENT_ERROR = [(400, 499)]
+    SERVER_ERROR = [(500, 599)]
+    ALL_ERROR = CLIENT_ERROR + SERVER_ERROR
+    NONE = []
+
 def do_request(url, method_name='get',
                auth=None, data=None,
-               raise_on=[], timeout=10):
+               raise_on=HTTPStatusRange.ALL_ERROR,
+               timeout=10):
     """
     :param raise_on: List of (tuples or integers) specifying the
         HTTP status codes to be considered exceptional failure.
+        Some common ranges are defined in :class:`HTTPStatusRange`.
     :raises: :exc:`requests.exceptions.Timeout`
     :raises: :exc:`requests.exceptions.HTTPError`
     """
     log = logging.getLogger('occo.util')
 
-    import requests
     method = getattr(requests, method_name)
 
     log.debug('Trying URL %r with method %r', url, method_name)
