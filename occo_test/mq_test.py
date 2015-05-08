@@ -17,10 +17,9 @@ import logging.config
 import uuid
 import time
 
-util.set_config_base_dir(__file__, use_dir=True)
+util.set_config_base_dir(__file__, use_dir=True, prefix=False)
 CFG_FILE=util.cfg_file_path('comm_test_cfg.yaml')
-with open(CFG_FILE) as cfg:
-    cfg = config.DefaultYAMLConfig(cfg)
+cfg = config.DefaultYAMLConfig(CFG_FILE)
 
 logging.config.dictConfig(cfg.logging)
 
