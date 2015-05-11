@@ -97,7 +97,7 @@ def set_config_base_dir(path, use_dir=False, prefix=True):
     Set the global config file base directory.
 
     A relative path is resolved against the current-previous base directory.
-    See :fun:`cfg_file_path` for the exact algorithm.
+    See :func:`cfg_file_path` for the exact algorithm.
 
     An absolute path is treated being relative to sys.prefix, unless ``prefix``
     is set to ``False``. This helps "jailing" applications using
