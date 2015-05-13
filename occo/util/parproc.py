@@ -9,6 +9,9 @@ Primitives for parallel processing.
 __all__ = ['exiting', 'GracefulProcess', 'init']
 
 import threading
+import logging
+
+log = logging.getLogger('occo.util.parproc')
 
 exiting = threading.Event()
 """
@@ -57,20 +60,24 @@ class GracefulProcess(multiprocessing.Process):
                 self._trykill(sig, timeout)
             except StillRunning:
                 log.warning('%s: Process %d has not exited in %d seconds. '
-                            'Trying %s...', sig, self.pid, timeout, nextsig)
+                            'Trying %s...', sig, self.pid, timeout, next_sig)
                 continue
             else:
                 break
 
     def _trykill(self, signame, timeout):
-        import os, signal
+        import signal, os
         sig = getattr(signal, signame)
-        os.signal(sig, self.pid)
+        os.kill(self.pid, sig)
 
         try:
-            p.join(timeout)
+            log.debug('Joining with process %d with timeout %d',
+                      self.pid, timeout)
+            self.join(timeout)
+            log.debug('Joined process %d', self.pid)
         except BaseException:
             log.exception('')
 
         if self.is_alive():
+            log.debug('Process %d is still alive', self.pid)
             raise StillRunning()
