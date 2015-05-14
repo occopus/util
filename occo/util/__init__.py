@@ -16,7 +16,8 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'logged', 'yamldump',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
-           'HTTPTimeout', 'HTTPError', 'HTTPStatusRange']
+           'HTTPTimeout', 'HTTPError', 'HTTPStatusRange',
+           'dict_get']
 
 import itertools
 import logging
@@ -526,3 +527,25 @@ def do_request(url, method_name='get',
         r.raise_for_status()
     r.success = in_range(r.status_code, (200, 299))
     return r
+
+def dict_get(mapping, dottedkey):
+    return dict_get_lst(mapping, dottedkey.split('.'))
+def dict_get_lst(mapping, keylist):
+    if not keylist:
+        raise ValueError('Empty keylist')
+
+    nextkey = keylist[0]
+    if not nextkey:
+        raise ValueError('Empty key name')
+
+    if len(keylist) == 1:
+        return mapping[nextkey]
+
+    sub_mapping = mapping[nextkey]
+
+    try:
+        result = dict_get_lst(sub_mapping, keylist[1:])
+    except KeyError as e:
+        raise KeyError('.'.join([nextkey, e[0]]))
+    else:
+        return result
