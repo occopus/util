@@ -22,5 +22,6 @@ setuptools.setup(
                       'python-dateutil',
                       'pytz',
                       'six',
-                      'wsgiref' ],
+                      'wsgiref',
+                      'requests'],
 )
