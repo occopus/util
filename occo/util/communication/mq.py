@@ -19,6 +19,7 @@ __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
 
 import comm
 import occo.util as util
+import occo.exceptions as exc
 import occo.util.factory as factory
 import pika
 import uuid
@@ -69,7 +70,7 @@ class MQHandler(object):
                 config['host'], config.get('port', 5672),
                 config['vhost'], self.credentials)
         except KeyError as e:
-            raise util.ConfigurationError(e)
+            raise exc.ConfigurationError(e)
         self.default_exchange = config.get('exchange', '')
         self.default_routing_key = config.get('routing_key', None)
         self.auto_delete = config.get('auto_delete', False)
@@ -304,7 +305,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         try:
             self.queue = config['queue']
         except KeyError:
-            raise util.ConfigurationError('queue', 'Queue name is mandatory')
+            raise exc.ConfigurationError('queue', 'Queue name is mandatory')
 
     def __enter__(self):
         super(MQEventDrivenConsumer, self).__enter__()

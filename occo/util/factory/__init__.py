@@ -75,6 +75,7 @@ Example configuration
 
 __all__ = ['register', 'MultiBackend']
 
+import occo.exceptions as exc
 import occo.util as util
 import yaml
 import logging
@@ -83,7 +84,7 @@ log = logging.getLogger('occo.util')
 
 def split(mapping):
     if not 'protocol' in mapping:
-        raise util.ConfigurationError(
+        raise exc.ConfigurationError(
             'protocol', 'Missing protocol specification')
     protocol = mapping.pop('protocol')
     return mapping, protocol
@@ -100,7 +101,7 @@ class YAMLConstructor(object):
             try:
                 return self.cls.instantiate(protocol, **kwargs)
             except Exception as ex:
-                raise util.ConfigurationError(
+                raise exc.ConfigurationError(
                     'config',
                     'Abstract factory error while parsing YAML: %s'%ex,
                     loader, node)
@@ -147,17 +148,17 @@ class MultiBackend(object):
         This method will instantiate the correct backend identified by
         ``protocol`` in ``kwargs``.
 
-        :raises occo.util.general.ConfigurationError: if ``protocol`` is not
+        :raises occo.exceptions.ConfigurationError: if ``protocol`` is not
             specified in ``kwargs``, or the backend identified by ``protocol``
             does not exist.
         """
 
         if not hasattr(cls, 'backends'):
-            raise util.ConfigurationError(
+            raise exc.ConfigurationError(
                 'backends',
                 "The MultiBackend class '%s' has no registered backends."%cls.__name__)
         if not protocol in cls.backends:
-            raise util.ConfigurationError('protocol',
+            raise exc.ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
 
         objclass = cls.backends[protocol]

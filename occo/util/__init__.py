@@ -22,11 +22,6 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
 import itertools
 import logging
 
-class ConfigurationError(Exception):
-    """Raised by communication classes, if the given configuration is bad, or
-    insufficient."""
-    pass
-
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.
 

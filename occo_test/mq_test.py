@@ -7,6 +7,7 @@
 import unittest
 from common import *
 import occo.util as util
+import occo.exceptions as exc
 import occo.util.communication as comm
 import occo.util.communication.mq as mq
 import occo.util.config as config
@@ -46,7 +47,7 @@ class MQBootstrapTest(unittest.TestCase):
             mq.MQEventDrivenConsumer)
     def test_bad_amqp(self):
         def tst(cls):
-            with self.assertRaises(util.ConfigurationError):
+            with self.assertRaises(exc.ConfigurationError):
                 cls.instantiate(**self.fail_config_2)
         map(tst, [comm.AsynchronProducer, comm.RPCProducer,
                   comm.EventDrivenConsumer])
