@@ -503,7 +503,8 @@ class HTTPStatusRange(object):
 def do_request(url, method_name='get',
                auth=None, data=None,
                raise_on=HTTPStatusRange.ALL_ERROR,
-               timeout=10):
+               timeout=10,
+               allow_redirects=True):
     """
     :param raise_on: List of (tuples or integers) specifying the
         HTTP status codes to be considered exceptional failure.
@@ -516,7 +517,11 @@ def do_request(url, method_name='get',
     method = getattr(requests, method_name)
 
     log.debug('Trying URL %r with method %r', url, method_name)
-    r = method(url, timeout=timeout, auth=auth, data=data)
+    r = method(url,
+               timeout=timeout,
+               auth=auth,
+               data=data,
+               allow_redirects=allow_redirects)
     log.debug('HTTP response: %d (%s)', r.status_code, r.reason)
     if in_range_set(r.status_code, raise_on):
         r.raise_for_status()
