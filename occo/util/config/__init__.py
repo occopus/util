@@ -27,8 +27,58 @@ import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
     path_coalesce, file_locations, set_config_base_dir
 import occo.util.factory as factory
-import os
+import os, sys
 import logging
+
+class YAMLLoad(object):
+    def __init__(self, filename):
+        self.filename = filename
+        # For context management:
+        self.loader, self.stream = None, None
+
+    def _open_stream(self):
+        self.stream = \
+            sys.stdin if self.filename == '-' \
+            else open(self.filename)
+
+    def _open_loader(self):
+        self._open_stream()
+
+    def __enter__(self):
+        self._open_loader()
+        return self
+
+    def __exit__(self, *args):
+        try:
+            if self.loader: self.loader.dispose()
+        finally:
+            if self.stream: self.stream.close()
+
+    def get_single_node(self):
+        raise NotImplementedError()
+    def render_node(self, node):
+        raise NotImplementedError()
+    def get_document(self):
+        return self.render_node(self.get_single_node())
+
+class YAMLLoad_Parsed(YAMLLoad):
+    def _open_loader(self):
+        self._open_stream()
+        from yaml.loader import Loader
+        self.loader = Loader(self.stream)
+        self.loader._filename = os.path.abspath(self.filename)
+
+    def get_single_node(self):
+        return self.loader.get_single_node()
+    def render_node(self, node):
+        return self.loader.construct_document(node)
+
+class YAMLLoad_Raw(YAMLLoad):
+    def get_single_node(self):
+        return yaml.ScalarNode(tag='tag:yaml.org,2002:str',
+                               value=self.stream.read())
+    def render_node(self, node):
+        return node.value
 
 def yaml_load_file(filename):
     """
@@ -36,23 +86,8 @@ def yaml_load_file(filename):
     information can be used by !yaml_import and !file_import to resolve relative
     paths.
     """
-    import os
-    from yaml.loader import Loader
-    if filename == '-':
-        import sys
-        stream = sys.stdin
-        # The filename will be cut by dirname
-        filename = os.path.join(os.getcwd(), 'DUMMYFILENAME')
-    else:
-        stream = open(filename)
-
-    try:
-        loader = Loader(stream)
-        loader._filename = os.path.abspath(filename)
-        return loader.get_single_data()
-    finally:
-        try: stream.close()
-        finally: loader.dispose()
+    with YAMLLoad_Parsed(filename) as y:
+        return y.get_document()
 
 class Config(object):
     """
@@ -158,15 +193,18 @@ class YAMLImport(object):
         self.parser = parser
 
     def __call__(self, loader, node):
-        # This workaround is needed for importing to work with anchors. Without
-        # this, anchors will point to the _original_ mapping containing the url
-        # and other parameters of the import, _not_ the imported object. This
-        # solution rewrites the original node with the new data.
-        data = self._load(loader, **loader.construct_mapping(node, deep=True))
-        from yaml.representer import Representer
-        node.value = Representer().represent_mapping('tag:yaml.org,2002:map',
-                                                     data).value
-        return data
+        parser = self._load(loader, **loader.construct_mapping(node, deep=True))
+        with parser:
+            data_node = parser.get_single_node()
+            # Anchors refer to the original node object, so imported objects
+            # cannot be referenced directly.
+            # Here, the original node is updated with the new data so at least
+            # the copy operator (<<: *ANCHOR) works.
+            # (Full-fledged importing could only work (maybe!) with a
+            #  reimplemented yaml Reader.)
+            node.tag = data_node.tag
+            node.value = data_node.value
+            return parser.render_node(data_node)
 
     def _load(self, loader, **kwargs):
         log = logging.getLogger('occo.util')
@@ -185,6 +223,7 @@ class YAMLImporter(factory.MultiBackend):
         self.__dict__.update(data)
     def _load(self, loader):
         raise NotImplementedError()
+
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
     def _get_filename(self, loader):
@@ -199,12 +238,8 @@ class FileImporter(YAMLImporter):
             .debug("Importing YAML file: '%s'", filename)
         return self.parser(filename)
 
-def filetext(filename):
-    with open(filename) as f:
-        return f.read()
-
-yaml.add_constructor('!yaml_import', YAMLImport(yaml_load_file))
-yaml.add_constructor('!text_import', YAMLImport(filetext))
+yaml.add_constructor('!yaml_import', YAMLImport(YAMLLoad_Parsed))
+yaml.add_constructor('!text_import', YAMLImport(YAMLLoad_Raw))
 
 class PythonImport:
     """
