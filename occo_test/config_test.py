@@ -34,7 +34,7 @@ class ConfigTest(unittest.TestCase):
         import yaml
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
-        data = util.yaml_load_file(self.filename)
+        data = cfg.yaml_load_file(self.filename)
         print '%r'%data
         self.assertIn('child1', data)
         child1 = data['child1']
@@ -51,7 +51,7 @@ class ConfigTest(unittest.TestCase):
         import yaml
         self.filename = util.rel_to_file('import_test/parent_text.yaml')
         self.control_filename = util.rel_to_file('import_test/control_text.yaml')
-        data = util.yaml_load_file(self.filename)
+        data = cfg.yaml_load_file(self.filename)
         with open(self.control_filename) as f:
             self.assertEqual(f.read(),
                              yaml.dump(data, default_flow_style=False))
