@@ -8,7 +8,7 @@
 """
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
-           'ConfigurationError', 'Cleaner', 'wet_method',
+           'Cleaner', 'wet_method',
            'rel_to_file', 'cfg_file_path', 'config_base_dir',
            'set_config_base_dir',
            'path_coalesce', 'file_locations',
