@@ -158,7 +158,15 @@ class YAMLImport(object):
         self.parser = parser
 
     def __call__(self, loader, node):
-        return self._load(loader, **loader.construct_mapping(node, deep=True))
+        # This workaround is needed for importing to work with anchors. Without
+        # this, anchors will point to the _original_ mapping containing the url
+        # and other parameters of the import, _not_ the imported object. This
+        # solution rewrites the original node with the new data.
+        data = self._load(loader, **loader.construct_mapping(node, deep=True))
+        from yaml.representer import Representer
+        node.value = Representer().represent_mapping('tag:yaml.org,2002:map',
+                                                     data).value
+        return data
 
     def _load(self, loader, **kwargs):
         log = logging.getLogger('occo.util')
