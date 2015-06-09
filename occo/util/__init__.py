@@ -439,7 +439,7 @@ def yamldump(obj):
 def yaml_load_file(filename):
     """
     Does the same as yaml.load, but also sets the filename on the loader. This
-    information can be used by yaml_import and !file_import to resolve relative
+    information can be used by !yaml_import and !file_import to resolve relative
     paths.
     """
     import os
