@@ -20,15 +20,39 @@ with statically defined data.
 """
 
 __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
-           'PythonImport', 'YAMLImport']
+           'PythonImport', 'YAMLImport', 'yaml_load_file']
 
 import yaml
 import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
-    path_coalesce, file_locations, set_config_base_dir, yaml_load_file
+    path_coalesce, file_locations, set_config_base_dir
 import occo.util.factory as factory
 import os
 import logging
+
+def yaml_load_file(filename):
+    """
+    Does the same as yaml.load, but also sets the filename on the loader. This
+    information can be used by !yaml_import and !file_import to resolve relative
+    paths.
+    """
+    import os
+    from yaml.loader import Loader
+    if filename == '-':
+        import sys
+        stream = sys.stdin
+        # The filename will be cut by dirname
+        filename = os.path.join(os.getcwd(), 'DUMMYFILENAME')
+    else:
+        stream = open(filename)
+
+    try:
+        loader = Loader(stream)
+        loader._filename = os.path.abspath(filename)
+        return loader.get_single_data()
+    finally:
+        try: stream.close()
+        finally: loader.dispose()
 
 class Config(object):
     """
