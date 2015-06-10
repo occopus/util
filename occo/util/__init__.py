@@ -77,7 +77,7 @@ def file_locations(filename, *paths):
     for p in paths:
         if callable(p):
             yield p(filename)
-        elif type(p) is str:
+        elif isinstance(p, basestring):
             yield os.path.join(p, filename)
         elif p is None:
             yield filename
