@@ -93,10 +93,7 @@ class MQConnectionTest(unittest.TestCase):
                 log.debug('Consumer exited')
     def test_rpc(self):
         log.debug('Starting test RPC')
-        try:
-            self.i_test_rpc()
-        except Exception:
-            log.exception('RPC test failed:')
+        self.i_test_rpc()
 
     def i_test_rpc_double(self):
         salt = str(uuid.uuid4())
@@ -132,10 +129,7 @@ class MQConnectionTest(unittest.TestCase):
                 log.debug('Consumer exited')
     def test_rpc_double(self):
         log.debug('Starting double test RPC')
-        try:
-            self.i_test_rpc_double()
-        except Exception:
-            log.exception('Double RPC test failed:')
+        self.i_test_rpc_double()
 
     def test_async(self):
         MSG = 'test message abc'
@@ -153,26 +147,23 @@ class MQConnectionTest(unittest.TestCase):
         c = comm.EventDrivenConsumer.instantiate(
             processor=consumer_core, cancel_event=e,
             **cfg.endpoints['consumer_async'])
-        try:
-            with p, c:
-                log.debug('Async Creating thread object')
-                t = threading.Thread(target=c)
-                log.debug('Async Starting thread')
-                t.start()
-                log.debug('Async thread started, sending Async message')
-                p.push_message(MSG)
-                log.debug('Waiting Async arrival')
-                r.wait()
-                log.debug('Async message has arrived')
-                self.assertEqual(self.data, EXPECTED)
-                log.debug('Setting Async cancel event')
-                e.set()
-                log.debug('Waiting for Async Consumer to exit')
-                t.join()
-                log.debug('Consumer exited')
-        except Exception as ex:
-            log.error('%s', ex)
-            log.exception('Error:')
+
+        with p, c:
+            log.debug('Async Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('Async Starting thread')
+            t.start()
+            log.debug('Async thread started, sending Async message')
+            p.push_message(MSG)
+            log.debug('Waiting Async arrival')
+            r.wait()
+            log.debug('Async message has arrived')
+            self.assertEqual(self.data, EXPECTED)
+            log.debug('Setting Async cancel event')
+            e.set()
+            log.debug('Waiting for Async Consumer to exit')
+            t.join()
+            log.debug('Consumer exited')
 
 def setup_module():
     import os
