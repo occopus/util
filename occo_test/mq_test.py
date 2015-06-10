@@ -5,7 +5,6 @@
 #
 
 import unittest
-from common import *
 import occo.util as util
 import occo.exceptions as exc
 import occo.util.communication as comm
@@ -18,9 +17,7 @@ import logging.config
 import uuid
 import time
 
-util.set_config_base_dir(__file__, use_dir=True, prefix=False)
-CFG_FILE=util.cfg_file_path('comm_test_cfg.yaml')
-cfg = config.DefaultYAMLConfig(CFG_FILE)
+cfg = config.DefaultYAMLConfig(util.rel_to_file('comm_test_cfg.yaml'))
 
 logging.config.dictConfig(cfg.logging)
 

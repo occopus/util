@@ -5,7 +5,6 @@
 #
 
 import unittest
-from common import *
 import occo.util.config as cfg
 import occo.util as util
 import sys
@@ -34,7 +33,7 @@ class ConfigTest(unittest.TestCase):
         import yaml
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
-        data = util.yaml_load_file(self.filename)
+        data = cfg.yaml_load_file(self.filename)
         print '%r'%data
         self.assertIn('child1', data)
         child1 = data['child1']
@@ -44,14 +43,12 @@ class ConfigTest(unittest.TestCase):
         self.assertIs(type(child2), dict)
         self.assertIn('dataaa', child2)
         self.assertEqual(child2['dataaa'], 'this is it')
-        with open(self.control_filename) as f:
-            self.assertEqual(f.read(),
-                             yaml.dump(data, default_flow_style=False))
+        control = cfg.yaml_load_file(self.control_filename)
+        self.assertEqual(data, control)
     def test_import_text(self):
         import yaml
         self.filename = util.rel_to_file('import_test/parent_text.yaml')
         self.control_filename = util.rel_to_file('import_test/control_text.yaml')
-        data = util.yaml_load_file(self.filename)
-        with open(self.control_filename) as f:
-            self.assertEqual(f.read(),
-                             yaml.dump(data, default_flow_style=False))
+        data = cfg.yaml_load_file(self.filename)
+        control = cfg.yaml_load_file(self.control_filename)
+        self.assertEqual(data, control)
