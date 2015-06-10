@@ -422,10 +422,19 @@ class logged(object):
         log = self.logger_method
 
         @functools.wraps(fun)
-        def wrapper(fun_self_, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            # Determine whether a method and remove self
+            # inspect.ismethod would not work, as at the time this decorator
+            # runs, the function is not yet binded to the class.
+            import inspect
+            all_args = args
+            fun_args = inspect.getargspec(fun).args
+            if fun_args and fun_args[0] == 'self':
+                args = args[1:] # Remove `self' from output
+
             funcdef = '[{0}; {1}; {2}]'.format(fun.__name__, args, kwargs)
             log('%sFunction call: %s%s', self.prefix, funcdef, self.prefix)
-            retval = fun(fun_self_, *args, **kwargs)
+            retval = fun(*all_args, **kwargs)
             log('%sFunction result: %s -> [%r]%s',
                 self.prefix, funcdef, retval, self.prefix)
             return retval
