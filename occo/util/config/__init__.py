@@ -260,7 +260,8 @@ class FileImporter(YAMLImporter):
         self.stream = open(stream_name)
         return self.stream
     def _close_stream(self):
-        self.stream.close()
+        if self.stream:
+            self.stream.close()
 
 yaml.add_constructor('!yaml_import', YAMLImport(YAMLLoad_Parsed))
 yaml.add_constructor('!text_import', YAMLImport(YAMLLoad_Raw))
