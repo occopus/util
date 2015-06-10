@@ -150,7 +150,7 @@ class AsynchronProducer(factory.MultiBackend, CommChannel):
         :class:`Exception`, etc.). This method should not return the result of
         the operation as it is performed asynchronously.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 class RPCProducer(factory.MultiBackend, CommChannel):
     """Abstract interface of an RPC client. Sub-classes must implement remote
