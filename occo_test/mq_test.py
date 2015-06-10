@@ -18,7 +18,7 @@ import logging.config
 import uuid
 import time
 
-cfg = config.DefaultYAMLConfig('comm_test_cfg.yaml')
+cfg = config.DefaultYAMLConfig(util.rel_to_file('comm_test_cfg.yaml'))
 
 logging.config.dictConfig(cfg.logging)
 
