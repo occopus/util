@@ -73,3 +73,10 @@ class CoalesceTest(unittest.TestCase):
         util.set_config_base_dir(None)
         self.assertEqual(util.cfg_file_path('/etc/occo/alma', 'anyth:ng'),
                          sys.prefix + '/etc/occo/alma')
+
+    def test_path_coalesce(self):
+        pc = util.path_coalesce
+        self.assertIsNone(pc())
+        self.assertIsNone(pc(None, None, None))
+        self.assertIsNone(pc('nonexistentfile'))
+        self.assertEqual(pc(None, __file__), __file__)
