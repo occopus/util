@@ -80,3 +80,10 @@ class CoalesceTest(unittest.TestCase):
         self.assertIsNone(pc(None, None, None))
         self.assertIsNone(pc('nonexistentfile'))
         self.assertEqual(pc(None, __file__), __file__)
+
+    def test_file_locations(self):
+        fl = util.file_locations
+        self.assertEqual(
+            list(
+                fl('x', None, '', 'y', lambda x: x+x)),
+            ['x', 'x', 'y/x', 'xx'])
