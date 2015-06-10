@@ -49,7 +49,7 @@ def path_coalesce(*paths):
     """
     import os
     for p in paths:
-        if os.path.exists(p):
+        if p and os.path.exists(p):
             return p
     return None
 
