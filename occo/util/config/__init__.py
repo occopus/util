@@ -298,7 +298,7 @@ class PythonImport:
         return [__import__(module.value) for module in node.value]
 yaml.add_constructor('!python_import', PythonImport())
 
-def config(default_config=dict(), setup_args=None, cfg_path=None):
+def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     default_config.setdefault('cfg', None)
 
     #
@@ -312,7 +312,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
                          type=cfg_file_path, required=True)
     if setup_args:
         setup_args(cfg)
-    cfg.parse_args()
+    cfg.parse_args(**kwargs)
 
     if not cfg.cfg_path:
         possible_locations = file_locations('occo.yaml',
