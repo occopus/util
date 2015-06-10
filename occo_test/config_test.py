@@ -5,7 +5,6 @@
 #
 
 import unittest
-from common import *
 import occo.util.config as cfg
 import occo.util as util
 import sys

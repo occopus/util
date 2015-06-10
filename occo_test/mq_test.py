@@ -5,7 +5,6 @@
 #
 
 import unittest
-from common import *
 import occo.util as util
 import occo.exceptions as exc
 import occo.util.communication as comm
