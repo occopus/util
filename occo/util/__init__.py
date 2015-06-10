@@ -210,12 +210,12 @@ def curried(func, **fixed_kwargs):
         return func(*args, **kwargs)
 
     return proxy
-def rel_to_file(relpath, basefile=None, d_stack_frame=0):
+def rel_to_file(path, basefile=None, d_stack_frame=0, relative_cwd=False):
     """
     Returns the absolute version of ``relpath``, assuming it's relative to the
     given *file* (_not_ directory).
 
-    :param str relpath: The relative path to be resolved.
+    :param str path: The relative path to be resolved.
     :param str basefile: The base file which ``relpath`` is relative to.
         If unset, ``relpath`` is resolved relative to a caller's ``__file__``
         attribute.
@@ -231,7 +231,7 @@ def rel_to_file(relpath, basefile=None, d_stack_frame=0):
     etc.) relative to the module or executable that is calling it (e.g. test
     modules).
     """
-    from os.path import abspath, join, dirname
+    from os.path import abspath, join, dirname, relpath
     if not basefile:
         # Default base path: path to the caller file
         import inspect
@@ -239,7 +239,10 @@ def rel_to_file(relpath, basefile=None, d_stack_frame=0):
         for i in xrange(d_stack_frame+1):
             fr = fr.f_back
         basefile = fr.f_globals['__file__']
-    return abspath(join(dirname(basefile), relpath))
+    pth = join(dirname(basefile), path)
+    return relpath(pth) \
+        if relative_cwd \
+        else abspath(pth)
 
 def identity(*args):
     """Returns all arguments as-is"""
