@@ -95,6 +95,90 @@ class MQConnectionTest(unittest.TestCase):
         log.debug('Starting test RPC')
         self.i_test_rpc()
 
+    def test_rpc_error(self):
+        MSG = str(uuid.uuid4())
+        EXPECTED = 'RE: %s'%MSG
+        e = threading.Event()
+        def consumer_core(msg, *args, **kwargs):
+            log.debug('RPC Consumer: message has arrived')
+            return comm.Response(400, 'RE: %s'%msg)
+        p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_rpc'])
+        with p, c:
+            log.debug('RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('RPC Starting thread')
+            t.start()
+            log.debug('RPC thread started, sending RPC message and '
+                      'waiting for response')
+            with self.assertRaises(comm.CriticalError):
+                try:
+                    retval = p.push_message(MSG)
+                finally:
+                    log.debug('Setting cancel event')
+                    e.set()
+                    log.debug('Waiting for RPC Consumer to exit')
+                    t.join()
+                    log.debug('Consumer exited')
+
+    def test_rpc_500_exception(self):
+        MSG = str(uuid.uuid4())
+        EXPECTED = 'RE: %s'%MSG
+        e = threading.Event()
+        def consumer_core(msg, *args, **kwargs):
+            log.debug('RPC Consumer: message has arrived')
+            raise ValueError('Test exception')
+        p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_rpc'])
+        with p, c:
+            log.debug('RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('RPC Starting thread')
+            t.start()
+            log.debug('RPC thread started, sending RPC message and '
+                      'waiting for response')
+            with self.assertRaises(comm.TransientError):
+                try:
+                    retval = p.push_message(MSG)
+                finally:
+                    log.debug('Setting cancel event')
+                    e.set()
+                    log.debug('Waiting for RPC Consumer to exit')
+                    t.join()
+                    log.debug('Consumer exited')
+
+    def test_rpc_comm_exception(self):
+        MSG = str(uuid.uuid4())
+        EXPECTED = 'RE: %s'%MSG
+        e = threading.Event()
+        def consumer_core(msg, *args, **kwargs):
+            log.debug('RPC Consumer: message has arrived')
+            raise comm.CommunicationError(403, 'Test exception')
+        p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
+        c = comm.EventDrivenConsumer.instantiate(
+            processor=consumer_core, cancel_event=e,
+            **cfg.endpoints['consumer_rpc'])
+        with p, c:
+            log.debug('RPC Creating thread object')
+            t = threading.Thread(target=c)
+            log.debug('RPC Starting thread')
+            t.start()
+            log.debug('RPC thread started, sending RPC message and '
+                      'waiting for response')
+            with self.assertRaises(comm.CommunicationError):
+                try:
+                    retval = p.push_message(MSG)
+                finally:
+                    log.debug('Setting cancel event')
+                    e.set()
+                    log.debug('Waiting for RPC Consumer to exit')
+                    t.join()
+                    log.debug('Consumer exited')
+
     def i_test_rpc_double(self):
         salt = str(uuid.uuid4())
         MSG, MSG2 = salt, 'hello-%s'%salt
