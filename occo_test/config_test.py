@@ -69,11 +69,16 @@ class ConfigTest(unittest.TestCase):
         # No functional test; only for coverage
         repr(self.args)
         str(self.args)
-    def test_cfg(self):
+    def test_cfg_args(self):
         cfg = util.config.config
         c = cfg(args=['--cfg',
                       util.rel_to_file('comm_test_cfg.yaml',
                                        relative_cwd=True)])
+    def test_cfg_param(self):
+        cfg = util.config.config
+        c = cfg(cfg_path=util.rel_to_file('comm_test_cfg.yaml',
+                                          relative_cwd=True),
+                args=[])
     def test_cfg_error(self):
         cfg = util.config.config
         with self.assertRaises(occo.exceptions.ConfigurationError):
