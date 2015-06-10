@@ -73,6 +73,13 @@ class CoalesceTest(unittest.TestCase):
         util.set_config_base_dir(None)
         self.assertEqual(util.cfg_file_path('/etc/occo/alma', 'anyth:ng'),
                          sys.prefix + '/etc/occo/alma')
+    def test_cfg_path7(self):
+        import sys, os
+        # Reset config path
+        util.set_config_base_dir(None)
+        util.set_config_base_dir('etc/occo', prefix=False)
+        self.assertEqual(util.cfg_file_path('alma'),
+                         os.path.join(os.getcwd(), 'etc/occo/alma'))
 
     def test_path_coalesce(self):
         pc = util.path_coalesce
