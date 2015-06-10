@@ -314,12 +314,19 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     cfg.parse_args(**kwargs)
 
     if not cfg.cfg_path:
-        possible_locations = file_locations('occo.yaml',
-            '.',
-            curried(rel_to_file, basefile=__file__),
-            cfg_file_path)
+        possible_locations = list(
+            file_locations('occo.yaml',
+                           '.',
+                           curried(rel_to_file, basefile=__file__),
+                           cfg_file_path))
 
         cfg.cfg_path = path_coalesce(*possible_locations)
+        if not cfg.cfg_path:
+            import occo.exceptions
+            msg = ('No configuration file has been specified '
+                   'and the default paths didn\'t work:\n    '
+                   + '\n    '.join(possible_locations))
+            raise occo.exceptions.ConfigurationError(msg)
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
@@ -332,5 +339,6 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
 
     log = logging.getLogger('occo')
     log.info('Staring up; PID = %d', os.getpid())
+    log.info('Using config file: %r', cfg.cfg_path)
 
     return cfg
