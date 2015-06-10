@@ -93,18 +93,15 @@ class YAMLConstructor(object):
     def __init__(self, cls):
         self.cls = cls
     def __call__(self, loader, node):
-        if type(node) is yaml.ScalarNode:
-            return self.cls()
-        else:
-            kwargs, protocol = split(loader.construct_mapping(node, deep=True))
+        kwargs, protocol = split(loader.construct_mapping(node, deep=True))
 
-            try:
-                return self.cls.instantiate(protocol, **kwargs)
-            except Exception as ex:
-                raise exc.ConfigurationError(
-                    'config',
-                    'Abstract factory error while parsing YAML: %s'%ex,
-                    loader, node)
+        try:
+            return self.cls.instantiate(protocol, **kwargs)
+        except Exception as ex:
+            raise exc.ConfigurationError(
+                'config',
+                'Abstract factory error while parsing YAML: %s'%ex,
+                loader, node)
 
 class RegisteredBackend(object):
     """ Documentation below, at ``register`` because of autodoc """
