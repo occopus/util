@@ -22,15 +22,9 @@ handlers:
 loggers:
     pika:
         propagate: false
-        level: DEBUG
+        level: ERROR
         handlers: [console]
     occo:
         propagate: false
-        level: DEBUG
+        level: INFO
         handlers: [console]
-    clogger:
-        level: DEBUG
-        handlers: [console]
-    flogger:
-        level: WARNING
-        handlers: [file]
