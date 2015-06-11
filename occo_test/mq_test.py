@@ -157,7 +157,7 @@ class MQConnectionTest(unittest.TestCase):
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            raise comm.CommunicationError(403, 'Test exception')
+            return comm.ExceptionResponse(403, ValueError())
         p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer.instantiate(
             processor=consumer_core, cancel_event=e,
@@ -169,7 +169,7 @@ class MQConnectionTest(unittest.TestCase):
             t.start()
             log.debug('RPC thread started, sending RPC message and '
                       'waiting for response')
-            with self.assertRaises(comm.CommunicationError):
+            with self.assertRaises(ValueError):
                 try:
                     retval = p.push_message(MSG)
                 finally:
