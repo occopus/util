@@ -164,6 +164,21 @@ class MultiBackend(object):
         return obj
 
     @classmethod
+    def from_config(cls, cfg):
+        if isinstance(cfg, basestring):
+            return cls.instantiate(protocol=cfg)
+        elif isinstance(cfg, dict):
+            try:
+                return cls.instantiate(
+                    cfg['protocol'],
+                    *cfg.get('args', tuple()),
+                    **cfg.get('kwargs', dict()))
+            except KeyError:
+                raise ValueError('Invalid backend configuration', cls, cfg)
+        else:
+            raise ValueError('Invalid backend configuration', cls, cfg)
+
+    @classmethod
     def has_backend(cls, protocol):
         return hasattr(cls, 'backends') \
             and protocol in cls.backends
