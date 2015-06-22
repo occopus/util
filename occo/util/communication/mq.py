@@ -296,6 +296,7 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
 
     .. automethod:: __call__
     """
+
     def __init__(self, processor, pargs=[], pkwargs={},
                  cancel_event=None, **config):
         super(MQEventDrivenConsumer, self).__init__(**config)
