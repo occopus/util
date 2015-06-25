@@ -49,7 +49,7 @@ def path_coalesce(*paths):
     """
     import os
     for p in paths:
-        if os.path.exists(p):
+        if p and os.path.exists(p):
             return p
     return None
 
@@ -77,7 +77,7 @@ def file_locations(filename, *paths):
     for p in paths:
         if callable(p):
             yield p(filename)
-        elif type(p) is str:
+        elif isinstance(p, basestring):
             yield os.path.join(p, filename)
         elif p is None:
             yield filename
@@ -210,12 +210,12 @@ def curried(func, **fixed_kwargs):
         return func(*args, **kwargs)
 
     return proxy
-def rel_to_file(relpath, basefile=None, d_stack_frame=0):
+def rel_to_file(path, basefile=None, d_stack_frame=0, relative_cwd=False):
     """
     Returns the absolute version of ``relpath``, assuming it's relative to the
     given *file* (_not_ directory).
 
-    :param str relpath: The relative path to be resolved.
+    :param str path: The relative path to be resolved.
     :param str basefile: The base file which ``relpath`` is relative to.
         If unset, ``relpath`` is resolved relative to a caller's ``__file__``
         attribute.
@@ -231,7 +231,7 @@ def rel_to_file(relpath, basefile=None, d_stack_frame=0):
     etc.) relative to the module or executable that is calling it (e.g. test
     modules).
     """
-    from os.path import abspath, join, dirname
+    from os.path import abspath, join, dirname, relpath
     if not basefile:
         # Default base path: path to the caller file
         import inspect
@@ -239,7 +239,10 @@ def rel_to_file(relpath, basefile=None, d_stack_frame=0):
         for i in xrange(d_stack_frame+1):
             fr = fr.f_back
         basefile = fr.f_globals['__file__']
-    return abspath(join(dirname(basefile), relpath))
+    pth = join(dirname(basefile), path)
+    return relpath(pth) \
+        if relative_cwd \
+        else abspath(pth)
 
 def identity(*args):
     """Returns all arguments as-is"""
@@ -371,7 +374,7 @@ class wet_method(object):
 
         @functools.wraps(fun)
         def wethod(fun_self_, *args, **kwargs):
-            if fun_self_.dry_run:
+            if getattr(fun_self_, 'dry_run', False):
                 log = logging.getLogger('occo.util')
                 log.warning('Dry run: omitting method execution for %s.%s.%s',
                             fun_self_.__class__.__module__,
@@ -422,10 +425,19 @@ class logged(object):
         log = self.logger_method
 
         @functools.wraps(fun)
-        def wrapper(fun_self_, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            # Determine whether a method and remove self
+            # inspect.ismethod would not work, as at the time this decorator
+            # runs, the function is not yet binded to the class.
+            import inspect
+            all_args = args
+            fun_args = inspect.getargspec(fun).args
+            if fun_args and fun_args[0] == 'self':
+                args = args[1:] # Remove `self' from output
+
             funcdef = '[{0}; {1}; {2}]'.format(fun.__name__, args, kwargs)
             log('%sFunction call: %s%s', self.prefix, funcdef, self.prefix)
-            retval = fun(fun_self_, *args, **kwargs)
+            retval = fun(*all_args, **kwargs)
             log('%sFunction result: %s -> [%r]%s',
                 self.prefix, funcdef, retval, self.prefix)
             return retval

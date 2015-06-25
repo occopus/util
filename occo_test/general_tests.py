@@ -5,7 +5,8 @@
 #
 
 import unittest
-
+import yaml
+import uuid, requests.exceptions as exc
 import occo.util as util
 
 class DummyException(Exception):
@@ -73,3 +74,157 @@ class CoalesceTest(unittest.TestCase):
         util.set_config_base_dir(None)
         self.assertEqual(util.cfg_file_path('/etc/occo/alma', 'anyth:ng'),
                          sys.prefix + '/etc/occo/alma')
+    def test_cfg_path7(self):
+        import sys, os
+        # Reset config path
+        util.set_config_base_dir(None)
+        util.set_config_base_dir('etc/occo', prefix=False)
+        self.assertEqual(util.cfg_file_path('alma'),
+                         os.path.join(os.getcwd(), 'etc/occo/alma'))
+
+    def test_path_coalesce(self):
+        pc = util.path_coalesce
+        self.assertIsNone(pc())
+        self.assertIsNone(pc(None, None, None))
+        self.assertIsNone(pc('nonexistentfile'))
+        self.assertEqual(pc(None, __file__), __file__)
+
+    def test_file_locations(self):
+        fl = util.file_locations
+        self.assertEqual(
+            list(
+                fl('x', None, '', 'y', lambda x: x+x)),
+            ['x', 'x', 'y/x', 'xx'])
+
+    def test_curried(self):
+        cu = util.curried
+        def add(x, y):
+            return x+y
+        self.assertEqual(cu(add, y=2)(2), 4)
+
+    def test_identity(self):
+        i = util.identity
+        self.assertIsNone(i())
+        self.assertIsNone(i(None))
+        self.assertEquals(i(1), 1)
+        x, y, z = i(1, 2, 3)
+        self.assertEquals((x, y, z), (1, 2, 3))
+
+    def test_nothing(self):
+        self.assertFalse(util.nothing())
+
+    def test_cleaner(self):
+        c = util.Cleaner(hide_keys=['pass'], hide_values=['xyz', 'zyx'])
+        _in = yaml.load("""
+                        pass: alma
+                        password: xyz
+                        public: yaay
+                        stuff:
+                            -
+                                secret: zyx
+                            -
+                                - zyx
+                                - alma
+                        """)
+        _out = yaml.load("""
+                         pass: XXX
+                         password: XXX
+                         public: yaay
+                         stuff:
+                            -
+                                secret: XXX
+                            -
+                                - XXX
+                                - alma
+                         """)
+        obfuscated = c.deep_copy(_in)
+        self.assertEqual(obfuscated, _out)
+
+    def test_wethod(self):
+        class WC(object):
+            def __init__(self, dr):
+                self.dry_run = dr
+            @util.wet_method(1)
+            def wc(self, x):
+                return x
+        self.assertEqual(WC(False).wc(5), 5)
+        self.assertEqual(WC(True).wc(5), 1)
+
+    def test_logged_function(self):
+        items = list()
+        def setx(fmt, *args):
+            items.append(fmt%tuple(args))
+
+        util.logged.disabled = False
+
+        @util.logged(setx)
+        def fun(x, y):
+            return x+y
+
+        fun(1, 2)
+        self.assertEqual(items,
+                         [
+                             'Function call: [fun; (1, 2); {}]',
+                             'Function result: [fun; (1, 2); {}] -> [3]'
+                         ])
+
+    def test_logged_method(self):
+        items = list()
+        def setx(fmt, *args):
+            items.append(fmt%tuple(args))
+
+        util.logged.disabled = False
+
+        class A(object):
+            @util.logged(setx)
+            def fun(self, x, y):
+                return x+y
+
+        A().fun(1, 2)
+        self.assertEqual(items,
+                         [
+                             'Function call: [fun; (1, 2); {}]',
+                             'Function result: [fun; (1, 2); {}] -> [3]'
+                         ])
+
+    def test_yaml_dump(self):
+        # Only a wrapper for yaml.dump, so the test is only for coverage
+        util.yamldump(dict(a=1, b=2))
+
+    def test_f_raise(self):
+        with self.assertRaises(Exception):
+           util.f_raise(Exception())
+
+    def test_run_process(self):
+        data='stuffstuff'
+        rc, stdout, stderr = util.basic_run_process('cat', data)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, data)
+
+    @unittest.skip("Skipping slow test of util.do_request")
+    def test_do_request(self):
+        dr = util.do_request
+        r = dr('http://example.org/', method_name='head')
+        self.assertTrue(r.success)
+        rndstr = str(uuid.uuid4())
+        with self.assertRaises(exc.HTTPError):
+            r = dr('http://google.com/{0}'.format(rndstr), method_name='head')
+
+    def test_dict_get(self):
+        dg = util.dict_get
+        dgl = util.dict_get_lst
+        data = yaml.load("""
+                         a:
+                            b:
+                                c:
+                                    d
+                         b:
+                            x
+                         """)
+        self.assertEqual(dg(data, 'a.b.c'), 'd')
+        with self.assertRaises(ValueError):
+            dgl(data, [])
+        with self.assertRaises(ValueError):
+            dg(data, 'a..b')
+        with self.assertRaises(KeyError):
+            dg(data, 'a.c.c')

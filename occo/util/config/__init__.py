@@ -187,30 +187,34 @@ class YAMLImport(object):
     def __init__(self, parser):
         self.parser = parser
 
-    def __call__(self, loader, node):
-        parser = self._load(loader, **loader.construct_mapping(node, deep=True))
-        with parser:
-            data_node = parser.get_single_node()
-            # Anchors refer to the original node object, so imported objects
-            # cannot be referenced directly.
-            # Here, the original node is updated with the new data so at least
-            # the copy operator (<<: *ANCHOR) works.
-            # (Full-fledged importing could only work (maybe!) with a
-            #  reimplemented yaml Reader.)
-            node.tag = data_node.tag
-            node.value = data_node.value
-            return parser.render_node(data_node)
-
-    def _load(self, loader, **kwargs):
+    def _instantiate_importer(self, **kwargs):
         log = logging.getLogger('occo.util')
         log.debug(yaml.dump(self, default_flow_style=False))
 
         from urlparse import urlparse
         url = urlparse(kwargs['url'])
         log.info('%r', kwargs)
-        importer = YAMLImporter.instantiate(
+        return YAMLImporter.instantiate(
             protocol=url.scheme, parser=self.parser, **kwargs)
-        return importer._load(loader)
+
+    def __call__(self, loader, node):
+        parameters = loader.construct_mapping(node, deep=True)
+        with self._instantiate_importer(**parameters) as importer:
+            parser = importer.get_parser_instance(loader)
+            with parser:
+                data_node = parser.get_single_node()
+                # Anchors refer to the original node object, so imported objects
+                # cannot be referenced directly.
+                # Here, the original node is updated with the new data so at least
+                # the copy operator (<<: *ANCHOR) works.
+                # (Full-fledged importing could only work (maybe!) with a
+                #  reimplemented yaml Reader.)
+                node.tag = data_node.tag
+                node.value = data_node.value
+                return parser.render_node(data_node)
+
+    def get_parser(self, loader, **kwargs):
+        raise NotImplementedError()
 
 class YAMLImporter(factory.MultiBackend):
     def __init__(self, parser, **data):
@@ -224,6 +228,13 @@ class YAMLImporter(factory.MultiBackend):
         raise NotImplementedError()
     def _open_stream(self, stream_name):
         raise NotImplementedError()
+    def _close_stream(self):
+        raise NotImplementedError()
+
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        self._close_stream()
 
     def _get_base_filename(self, loader):
         if hasattr(loader, '_filename'):
@@ -231,7 +242,7 @@ class YAMLImporter(factory.MultiBackend):
         else:
             return None
 
-    def _load(self, loader):
+    def get_parser_instance(self, loader):
         self.stream_name = self._stream_name(
             self._get_base_filename(loader), self._filename())
         return self.parser(self._open_stream(self.stream_name),
@@ -246,9 +257,11 @@ class FileImporter(YAMLImporter):
     def _open_stream(self, stream_name):
         logging.getLogger('occo.util') \
             .debug("Importing YAML file: '%s'", stream_name)
-        return open(stream_name)
-    def _close_stream(self, stream):
-        stream.close()
+        self.stream = open(stream_name)
+        return self.stream
+    def _close_stream(self):
+        if self.stream:
+            self.stream.close()
 
 yaml.add_constructor('!yaml_import', YAMLImport(YAMLLoad_Parsed))
 yaml.add_constructor('!text_import', YAMLImport(YAMLLoad_Raw))
@@ -286,7 +299,7 @@ class PythonImport:
         return [__import__(module.value) for module in node.value]
 yaml.add_constructor('!python_import', PythonImport())
 
-def config(default_config=dict(), setup_args=None, cfg_path=None):
+def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     default_config.setdefault('cfg', None)
 
     #
@@ -296,19 +309,25 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
     if cfg_path:
         cfg.cfg_path = cfg_file_path(cfg_path)
     else:
-        cfg.add_argument(name='--cfg', dest='cfg_path',
-                         type=cfg_file_path, required=True)
+        cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
     if setup_args:
         setup_args(cfg)
-    cfg.parse_args()
+    cfg.parse_args(**kwargs)
 
     if not cfg.cfg_path:
-        possible_locations = file_locations('occo.yaml',
-            '.',
-            curried(rel_to_file, basefile=__file__),
-            cfg_file_path)
+        possible_locations = list(
+            file_locations('occo.yaml',
+                           '.',
+                           curried(rel_to_file, basefile=__file__),
+                           cfg_file_path))
 
         cfg.cfg_path = path_coalesce(*possible_locations)
+        if not cfg.cfg_path:
+            import occo.exceptions
+            msg = ('No configuration file has been specified '
+                   'and the default paths didn\'t work:\n    '
+                   + '\n    '.join(possible_locations))
+            raise occo.exceptions.ConfigurationError(msg)
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
@@ -321,5 +340,6 @@ def config(default_config=dict(), setup_args=None, cfg_path=None):
 
     log = logging.getLogger('occo')
     log.info('Staring up; PID = %d', os.getpid())
+    log.info('Using config file: %r', cfg.cfg_path)
 
     return cfg

@@ -7,6 +7,7 @@
 import unittest
 import occo.util.config as cfg
 import occo.util as util
+import occo.exceptions
 import sys
 
 class ConfigTest(unittest.TestCase):
@@ -52,3 +53,37 @@ class ConfigTest(unittest.TestCase):
         data = cfg.yaml_load_file(self.filename)
         control = cfg.yaml_load_file(self.control_filename)
         self.assertEqual(data, control)
+    def test_import_from_string(self):
+        import yaml
+        util.set_config_base_dir(util.rel_to_file('import_test'),
+                                 prefix=False)
+        self.control_filename = util.rel_to_file('import_test/control_text.yaml')
+        data = yaml.load("""
+                         nothing: 0
+                         child1: !text_import
+                             url: file://c1_text.yaml
+                         """)
+        control = cfg.yaml_load_file(self.control_filename)
+        self.assertEqual(data, control)
+    def test_cfg_repr(self):
+        # No functional test; only for coverage
+        repr(self.args)
+        str(self.args)
+    def test_cfg_args(self):
+        cfg = util.config.config
+        c = cfg(args=['--cfg',
+                      util.rel_to_file('comm_test_cfg.yaml',
+                                       relative_cwd=True)])
+    def test_cfg_param(self):
+        cfg = util.config.config
+        c = cfg(cfg_path=util.rel_to_file('comm_test_cfg.yaml',
+                                          relative_cwd=True),
+                args=[])
+    def test_cfg_error(self):
+        cfg = util.config.config
+        with self.assertRaises(occo.exceptions.ConfigurationError):
+            try:
+                c = cfg(args=[])
+            except occo.exceptions.ConfigurationError as e:
+                print str(e)
+                raise

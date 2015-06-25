@@ -102,12 +102,18 @@ class Response(object):
     def check(self):
         """Raises an exception based on the status code of the response."""
         code = self.http_code
-        if code <= 199: raise NotImplementedError()
-        elif code <= 299: pass
-        elif code <= 399: raise NotImplementedError()
-        elif code <= 499: raise CriticalError(code, self.data)
-        elif code <= 599: raise TransientError(code, self.data)
-        else: raise NotImplementedError()
+        if code <= 199:
+            raise NotImplementedError()
+        elif code <= 299:
+            pass
+        elif code <= 399:
+            raise NotImplementedError()
+        elif code <= 499:
+            raise CriticalError(code, self.data)
+        elif code <= 599:
+            raise TransientError(code, self.data)
+        else:
+            raise NotImplementedError()
 
 class ExceptionResponse(Response):
     """Special :class:`Response` that will only raise an internal exception."""
@@ -144,7 +150,7 @@ class AsynchronProducer(factory.MultiBackend, CommChannel):
         :class:`Exception`, etc.). This method should not return the result of
         the operation as it is performed asynchronously.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 class RPCProducer(factory.MultiBackend, CommChannel):
     """Abstract interface of an RPC client. Sub-classes must implement remote

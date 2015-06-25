@@ -93,18 +93,15 @@ class YAMLConstructor(object):
     def __init__(self, cls):
         self.cls = cls
     def __call__(self, loader, node):
-        if type(node) is yaml.ScalarNode:
-            return self.cls()
-        else:
-            kwargs, protocol = split(loader.construct_mapping(node, deep=True))
+        kwargs, protocol = split(loader.construct_mapping(node, deep=True))
 
-            try:
-                return self.cls.instantiate(protocol, **kwargs)
-            except Exception as ex:
-                raise exc.ConfigurationError(
-                    'config',
-                    'Abstract factory error while parsing YAML: %s'%ex,
-                    loader, node)
+        try:
+            return self.cls.instantiate(protocol, **kwargs)
+        except Exception as ex:
+            raise exc.ConfigurationError(
+                'config',
+                'Abstract factory error while parsing YAML: %s'%ex,
+                loader, node)
 
 class RegisteredBackend(object):
     """ Documentation below, at ``register`` because of autodoc """
@@ -165,6 +162,21 @@ class MultiBackend(object):
         obj = object.__new__(cls.backends[protocol])
         objclass.__init__(obj, *args, **kwargs)
         return obj
+
+    @classmethod
+    def from_config(cls, cfg):
+        if isinstance(cfg, basestring):
+            return cls.instantiate(protocol=cfg)
+        elif isinstance(cfg, dict):
+            try:
+                return cls.instantiate(
+                    cfg['protocol'],
+                    *cfg.get('args', tuple()),
+                    **cfg.get('kwargs', dict()))
+            except KeyError:
+                raise ValueError('Invalid backend configuration', cls, cfg)
+        else:
+            raise ValueError('Invalid backend configuration', cls, cfg)
 
     @classmethod
     def has_backend(cls, protocol):
