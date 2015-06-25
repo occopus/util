@@ -374,7 +374,7 @@ class wet_method(object):
 
         @functools.wraps(fun)
         def wethod(fun_self_, *args, **kwargs):
-            if fun_self_.dry_run:
+            if getattr(fun_self_, 'dry_run', False):
                 log = logging.getLogger('occo.util')
                 log.warning('Dry run: omitting method execution for %s.%s.%s',
                             fun_self_.__class__.__module__,
