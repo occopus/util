@@ -16,7 +16,8 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'logged', 'yamldump',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
-           'HTTPTimeout', 'HTTPError', 'HTTPStatusRange',
+           'HTTPTimeout', 'HTTPError', 'ConnectionError',
+           'HTTPStatusRange',
            'dict_get', 'dict_merge']
 
 import itertools
@@ -480,6 +481,7 @@ def in_range_set(n, range_spec):
 import requests
 HTTPTimeout = requests.exceptions.Timeout
 HTTPError = requests.exceptions.HTTPError
+ConnectionError = requests.exceptions.ConnectionError
 
 class HTTPStatusRange(object):
     CLIENT_ERROR = [(400, 499)]
