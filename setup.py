@@ -10,7 +10,7 @@ setuptools.setup(
     author_email='adam.visegradi@sztaki.mta.hu',
     namespace_packages=['occo'],
     packages=['occo.util', 'occo.util.config', 'occo.util.communication', 'occo.util.factory',
-              'occo.exceptions'],
+              'occo.exceptions', 'occo.constants'],
 #    scripts=['bin/stowe-towels.py','bin/wash-towels.py'],
     url='http://www.lpds.sztaki.hu/',
     license='LICENSE.txt',
