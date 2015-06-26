@@ -228,3 +228,11 @@ class CoalesceTest(unittest.TestCase):
             dg(data, 'a..b')
         with self.assertRaises(KeyError):
             dg(data, 'a.c.c')
+
+    def test_dict_merge(self):
+        d1 = dict(a=1, b=dict(c=2, d=3), e=4)
+        d2 = dict(b=dict(c=10, f=11), e=dict(g=12))
+        dexp = dict(a=1, b=dict(c=10, d=3, f=11), e=dict(g=12))
+
+        dres = util.dict_merge(d1, d2)
+        self.assertEqual(dexp, dres)

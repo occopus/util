@@ -17,7 +17,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
            'HTTPTimeout', 'HTTPError', 'HTTPStatusRange',
-           'dict_get']
+           'dict_get', 'dict_merge']
 
 import itertools
 import logging
@@ -536,3 +536,15 @@ def dict_get_lst(mapping, keylist):
         raise KeyError('.'.join([nextkey, e[0]]))
     else:
         return result
+
+def dict_merge(dst, src):
+    import copy
+    def rec_merge(dst, src):
+        dst = copy.copy(dst)
+        for key, val in src.iteritems():
+            if (key in dst) and isinstance(val, dict) and isinstance(dst[key], dict):
+                dst[key] = rec_merge(dst[key], val)
+            else:
+                dst[key] = copy.copy(val)
+        return dst
+    return rec_merge(dst, src)
