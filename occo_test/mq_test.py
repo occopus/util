@@ -113,7 +113,7 @@ class MQConnectionTest(unittest.TestCase):
             t.start()
             log.debug('RPC thread started, sending RPC message and '
                       'waiting for response')
-            with self.assertRaises(comm.CriticalError):
+            with self.assertRaises(exc.CriticalError):
                 try:
                     retval = p.push_message(MSG)
                 finally:
@@ -141,7 +141,7 @@ class MQConnectionTest(unittest.TestCase):
             t.start()
             log.debug('RPC thread started, sending RPC message and '
                       'waiting for response')
-            with self.assertRaises(comm.TransientError):
+            with self.assertRaises(exc.TransientError):
                 try:
                     retval = p.push_message(MSG)
                 finally:
