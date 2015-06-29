@@ -10,6 +10,7 @@ __all__ = ['exiting', 'GracefulProcess', 'init']
 
 import threading
 import logging
+import signal, os
 
 log = logging.getLogger('occo.util.parproc')
 
@@ -55,18 +56,22 @@ class GracefulProcess(multiprocessing.Process):
     def graceful_terminate(self, timeout):
         from itertools import izip
 
+        log.info('Killing process %d', self.pid)
+
         for sig, next_sig in izip(self.SIGLIST, self.SIGLIST[1:]):
             try:
+                log.debug('Trying %s', sig)
                 self._trykill(sig, timeout)
             except StillRunning:
                 log.warning('%s: Process %d has not exited in %d seconds. '
                             'Trying %s...', sig, self.pid, timeout, next_sig)
                 continue
             else:
+                log.info('Process %d has been sucessfully killed with %s',
+                         self.pid, sig)
                 break
 
     def _trykill(self, signame, timeout):
-        import signal, os
         sig = getattr(signal, signame)
         os.kill(self.pid, sig)
 
