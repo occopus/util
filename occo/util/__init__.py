@@ -211,6 +211,7 @@ def curried(func, **fixed_kwargs):
         return func(*args, **kwargs)
 
     return proxy
+
 def rel_to_file(path, basefile=None, d_stack_frame=0, relative_cwd=False):
     """
     Returns the absolute version of ``relpath``, assuming it's relative to the
@@ -427,7 +428,7 @@ class logged(object):
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
-            # Determine whether a method and remove self
+            # Determine whether a method and remove self.
             # inspect.ismethod would not work, as at the time this decorator
             # runs, the function is not yet binded to the class.
             import inspect
@@ -446,6 +447,7 @@ class logged(object):
         return wrapper
 
 def yamldump(obj):
+    """Shorthand for yaml.dump"""
     import yaml
     return yaml.dump(obj, default_flow_style=False)
 
@@ -457,6 +459,14 @@ def f_raise(ex):
     raise ex
 
 def basic_run_process(cmd, input_data=None):
+    """
+    Synchronously run a process and gather its output.
+
+    :param cmd: Either a command line string (will be split at whitespaces) or
+        a list of strings serving as argv. E.g. ``['ls', '/etc']``.
+    :param input_data: Optional input data for the process.
+    :returns: ``$?``, ``stdout``, ``stderr`` of the process.
+    """
     log = logging.getLogger('occo.util')
 
     if isinstance(cmd, basestring):
@@ -472,13 +482,19 @@ def basic_run_process(cmd, input_data=None):
     return sp.returncode, output[0], output[1]
 
 def in_range(n, rng_spec):
+    """
+    Determines if a number is in the specified range. A tuple is considered an
+    inclusive range. A single integer is treated as a one-element interval.
+    """
     return (n == rng_spec) if type(rng_spec) is not tuple \
         else (rng_spec[0] <= n <= rng_spec[1])
 
 def in_range_set(n, range_spec):
+    """Determines if a number is in any of the ranges listed in ``range_spec``."""
     return any(in_range(n, r) for r in range_spec)
 
 class HTTPStatusRange(object):
+    """Semantic HTTP status ranges"""
     CLIENT_ERROR = [(400, 499)]
     SERVER_ERROR = [(500, 599)]
     ALL_ERROR = CLIENT_ERROR + SERVER_ERROR
@@ -515,8 +531,24 @@ def do_request(url, method_name='get',
     return r
 
 def dict_get(mapping, dottedkey):
+    """
+    Retreives a value from a nesting of dictionaries.
+
+    :param dict mapping: A dictionary that may contain nested dictionaries.
+    :param str dottedkey: A dotted nested key specification.
+
+    :raises ValueError: if the key specification, or any of its components is
+        empty. E.g. ``""`` or ``"a..c"``.
+    :raises KeyError: if the key does not exist.
+
+    E.g.: ``dict_get(x, "a.b.c")`` is equivalent to ``x['a']['b']['c']``.
+    """
     return dict_get_lst(mapping, dottedkey.split('.'))
+
 def dict_get_lst(mapping, keylist):
+    """
+    Retreives a value from a nesting of dictionaries.
+    """
     if not keylist:
         raise ValueError('Empty keylist')
 
@@ -537,7 +569,17 @@ def dict_get_lst(mapping, keylist):
         return result
 
 def dict_merge(dst, src):
+    """
+    Merges ``src`` onto ``dst`` in a deep-copied data structure, overriding data
+    in ``dst`` with ``src``.
+
+    Both ``dst`` and ``src`` are left intact; and also, they will not share
+    objects with the resulting data structure either. This avoids side-effects
+    when the result structure is modified, which would cause the original
+    ``dst`` to receive modifications if deep copy had not been used.
+    """
     import copy
+
     def rec_merge(dst, src):
         dst = copy.copy(dst)
         for key, val in src.iteritems():
@@ -546,4 +588,5 @@ def dict_merge(dst, src):
             else:
                 dst[key] = copy.copy(val)
         return dst
+
     return rec_merge(dst, src)
