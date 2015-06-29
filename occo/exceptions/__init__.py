@@ -17,3 +17,6 @@ class ConfigurationError(Exception):
     insufficient."""
     pass
 
+class SchemaError(Exception):
+    """Exception representing a schema error in the input data."""
+    pass
