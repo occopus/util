@@ -83,6 +83,7 @@ import logging
 log = logging.getLogger('occo.util')
 
 def split(mapping):
+    """Split a configuration mapping into ``protocol``, and the rest."""
     if not 'protocol' in mapping:
         raise exc.ConfigurationError(
             'protocol', 'Missing protocol specification')
@@ -90,6 +91,13 @@ def split(mapping):
     return mapping, protocol
 
 class YAMLConstructor(object):
+    """
+    YAML Constructor for :class:`MultiBackend` classes.
+
+    This constructur can be used with mappings. The mapping must contain a
+    ``protocol`` specification. This will be used to instantiate the right
+    backend class.
+    """
     def __init__(self, cls):
         self.cls = cls
     def __call__(self, loader, node):
@@ -103,11 +111,18 @@ class YAMLConstructor(object):
                 'Abstract factory error while parsing YAML: %s'%ex,
                 loader, node)
 
-class RegisteredBackend(object):
-    """ Documentation below, at ``register`` because of autodoc """
+class register(object):
+    """Decorator class to register backends for the abstract classes.
+
+    :param target: the target primitive, of which the decorated class is an
+        implementation
+    :param id_:    protocol identifier; an arbitrary string that identifies the
+        set of backends
+    """
     def __init__(self, target, id_):
         self.target = target
         self.id_ = id_
+
     def __call__(self, cls):
         if not hasattr(self.target, 'backends'):
             target = self.target
@@ -119,18 +134,11 @@ class RegisteredBackend(object):
 
         self.target.backends[self.id_] = cls
         return cls
-register = RegisteredBackend
-"""Decorator class to register backends for the abstract classes.
-
-:param target: the target primitive, of which the decorated class is an
-    implementation
-:param id_:    protocol identifier; an arbitrary string that identifies the
-    set of backends
-"""
 
 class MultiBackend(object):
     """
-    Automates backend selection based on configuration parameters.
+    Abstract implementation of the Abstract Factory pattern: a class inheriting
+    from this class immediately becomes an Abstract Factory.
     """
 
     @classmethod
@@ -158,6 +166,8 @@ class MultiBackend(object):
             raise exc.ConfigurationError('protocol',
                 'The backend specified (%s) does not exist'%protocol)
 
+        log.debug('Instantiating a backend for %s; protocol: %r',
+                  cls.__name__, protocol)
         objclass = cls.backends[protocol]
         obj = object.__new__(cls.backends[protocol])
         objclass.__init__(obj, *args, **kwargs)
@@ -165,6 +175,15 @@ class MultiBackend(object):
 
     @classmethod
     def from_config(cls, cfg):
+        """
+        Instantiates a backend using configuration data.
+
+        The data (``cfg``) can either be a string, or a mapping. If ``cfg`` is
+        a string, it is considered to be the backend ``protocol``, and the
+        backend will be instantiated with no parameters. If ``cfg`` is a
+        dictionary, it must contain a ``protocol``, and it may contain ``args``
+        and ``kwargs``.
+        """
         if isinstance(cfg, basestring):
             return cls.instantiate(protocol=cfg)
         elif isinstance(cfg, dict):
@@ -180,5 +199,9 @@ class MultiBackend(object):
 
     @classmethod
     def has_backend(cls, protocol):
+        """
+        Determines whether the given abstract factory class has a given
+        backend.
+        """
         return hasattr(cls, 'backends') \
             and protocol in cls.backends
