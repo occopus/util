@@ -76,10 +76,13 @@ class MQHandler(object):
         self.auto_delete = config.get('auto_delete', False)
 
     def __enter__(self):
+        log.debug('Entering pika context, creating channel')
         self.connection = pika.BlockingConnection(self.connection_parameters)
         self.channel = self.connection.channel()
         return self
+
     def __exit__(self, type, value, tb):
+        log.debug('Leaving pika context, closing channel')
         self.channel.close()
 
     def effective_exchange(self, override=None):
@@ -114,15 +117,21 @@ class MQHandler(object):
         :param str queue_name: The queue to be declared.
         :param `**kwargs`: Keyword arguments are passed through to the backend.
         """
+        log.debug('Declaring queue %r; auto_delete: %r',
+                  queue_name, self.auto_delete)
         self.channel.queue_declare(
             queue_name, auto_delete=self.auto_delete, **kwargs)
+
     def declare_response_queue(self, **kwargs):
         """Declares an auto-named, exclusive queue.
 
         :param `**kwargs`: Keyword arguments are passed through to the backend.
         """
+        log.debug('Declaring response queue')
         response = self.channel.queue_declare(exclusive=True, **kwargs)
+        log.debug('Response queue: %r', response.method.queue)
         return response.method.queue
+
     def publish_message(self, msg, routing_key=None, exchange=None, **kwargs):
         """Publishes a message.
 
@@ -136,11 +145,13 @@ class MQHandler(object):
         :param exchange: *Optional.* The exchange to send the message to.
         :param `**kwargs`: Keyword arguments are passed through to the backend.
         """
-        self.channel.basic_publish(
-            exchange=self.effective_exchange(exchange),
-            routing_key=self.effective_routing_key(routing_key),
-            body=self.serialize(msg),
-            **kwargs)
+        exchange = self.effective_exchange(exchange)
+        rkey = self.effective_routing_key(routing_key)
+        smsg = self.serialize(msg)
+        log.debug('Sending message to exchange %r with routing key %r',
+                  exchange, rkey)
+        self.channel.basic_publish(exchange=exchange, routing_key=rkey,
+                                   body=smsg, **kwargs)
 
     def setup_consumer(self, callback, queue, **kwargs):
         """Registers a consumer callback for the given queue.
@@ -177,6 +188,7 @@ class MQAsynchronProducer(MQHandler, comm.AsynchronProducer, YAMLChannel):
             unspecified, the default routing key is used.
         :param `**kwargs`: Keyword arguments are passed through to the backend.
         """
+        log.debug('Sending asynchron message')
         rkey = self.effective_routing_key(routing_key)
         self.declare_queue(rkey)
         self.publish_message(msg, routing_key=rkey, **kwargs)
@@ -219,6 +231,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
         self.callback_queue = self.declare_response_queue()
         self.setup_consumer(
             self.__on_response, no_ack=True, queue=self.callback_queue)
+
     def __exit__(self, type, value, tb):
         super(MQRPCProducer, self).__exit__(type, value, tb)
 
@@ -237,6 +250,7 @@ class MQRPCProducer(MQHandler, comm.RPCProducer, YAMLChannel):
 
         # try-finally is used instead of 'with self.lock' to avoid a level of
         # indent. But, when __reset will be factored out, this can be fixed.
+        log.debug('Sending RPC message')
         try:
             self.lock.acquire()
             self.correlation_id = str(uuid.uuid4())
@@ -381,9 +395,11 @@ class MQEventDrivenConsumer(MQHandler, comm.EventDrivenConsumer, YAMLChannel):
         yield."""
         while not self.cancelled:
             self.connection.process_data_events()
+
     def __call__(self):
         """Entry point for :meth:`threading.Thread.run()`"""
         try:
+            log.debug('Starting AMQP consumer loop')
             return self.start_consuming()
         except KeyboardInterrupt:
             log.debug('Ctrl-C Exiting.')
