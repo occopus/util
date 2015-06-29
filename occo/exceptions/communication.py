@@ -41,4 +41,7 @@ class CriticalError(CommunicationError):
     """
     pass
 
-
+import requests
+HTTPTimeout = requests.exceptions.Timeout
+HTTPError = requests.exceptions.HTTPError
+ConnectionError = requests.exceptions.ConnectionError

@@ -478,11 +478,6 @@ def in_range(n, rng_spec):
 def in_range_set(n, range_spec):
     return any(in_range(n, r) for r in range_spec)
 
-import requests
-HTTPTimeout = requests.exceptions.Timeout
-HTTPError = requests.exceptions.HTTPError
-ConnectionError = requests.exceptions.ConnectionError
-
 class HTTPStatusRange(object):
     CLIENT_ERROR = [(400, 499)]
     SERVER_ERROR = [(500, 599)]
@@ -502,6 +497,8 @@ def do_request(url, method_name='get',
     :raises: :exc:`requests.exceptions.HTTPError`
     """
     log = logging.getLogger('occo.util')
+
+    import requests
 
     method = getattr(requests, method_name)
 
