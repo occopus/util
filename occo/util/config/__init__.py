@@ -31,6 +31,24 @@ import os, sys
 import logging
 
 class YAMLLoad(object):
+    """
+    Subclasses load data from a stream as YAML data. This is an extension of
+    the basic :mod:`yaml` loader so it can support nested importing of files.
+
+    Usage:
+
+        - :meth:`get_document` implements the same functionality as
+            :func:`yaml.load`.
+        - :meth:`get_single_node` loads the data as a YAML object, which can be
+            used by YAML internals.
+        - :meth:`render_node` renders the internal YAML object as a Python
+            object.
+
+    :param stream: The input stream.
+    :param stream_name: The name of the stream; prefereably a handle that a
+        given subclass can interpret and utilize (e.g.: the filename or URL).
+    """
+
     def __init__(self, stream, stream_name=None):
         self.stream_name, self.stream = stream_name, stream
         # For context management:
@@ -51,12 +69,18 @@ class YAMLLoad(object):
 
     def get_single_node(self):
         raise NotImplementedError()
+
     def render_node(self, node):
         raise NotImplementedError()
+
     def get_document(self):
         return self.render_node(self.get_single_node())
 
 class YAMLLoad_Parsed(YAMLLoad):
+    """
+    Loads a file containing a YAML document. The ``stream_name`` must be
+    the filename of the input file.
+    """
     def _open_loader(self):
         from yaml.loader import Loader
         self.loader = Loader(self.stream)
@@ -68,6 +92,11 @@ class YAMLLoad_Parsed(YAMLLoad):
         return self.loader.construct_document(node)
 
 class YAMLLoad_Raw(YAMLLoad):
+    """
+    Loads a file containing raw text as a YAML object. The ``stream_name``
+    should be the path of the input file (although it's not used yet).
+    """
+
     def get_single_node(self):
         return yaml.ScalarNode(tag='tag:yaml.org,2002:str',
                                value=self.stream.read())
@@ -77,8 +106,8 @@ class YAMLLoad_Raw(YAMLLoad):
 def yaml_load_file(filename):
     """
     Does the same as yaml.load, but also sets the filename on the loader. This
-    information can be used by !yaml_import and !file_import to resolve relative
-    paths.
+    information can be used by ``!yaml_import`` and ``!file_import`` to resolve
+    relative paths.
     """
     with open(filename) as f:
         with YAMLLoad_Parsed(f, filename) as y:
@@ -151,15 +180,25 @@ class DefaultYAMLConfig(DefaultConfig):
 class YAMLImport(object):
     """
     YAML constructor. Import an external YAML file and replace the current node
-    with its content.
+    with its content. The content may be parsed as defined by the ``parser``.
 
     :param callable parser: The parser function used to interpret the content
         of the external file.
 
-    The mapping must contain a node called 'url'. The schema of the URL will
-    determine how the mapping will be interpreted.
+    The mapping must contain a node called 'url'. The actual work is done by a
+    :class:`YAMLImporter` instantiated based on the chema of this URL.
 
-    The following schema are supported:
+      Summary
+
+        - The URL determines the *source* of the data stream (file, URL, s3,
+          etc.), which is accessed by the specific :class:`YAMLImporter` backend.
+
+        - The parser associated with the constructor name (``"!yaml_import"`` or
+          ``"!text_import"``) determines how the *content* of the data stream
+          will be interpreted. This association is done upon importing this
+          module.
+
+    The following schema are supported currently:
 
         ``file``
 
@@ -180,8 +219,20 @@ class YAMLImport(object):
             target:
                 endpoint: http://cfe2.lpds.sztaki.hu:4567
                 regionname: ROOT
-            auth_data: !yaml_import
-                url: file://auth_data.yaml
+            auth_data: !yaml_import         # <- Content will be interpreted as YAML; by a YAMLLoad_Parsed() object.
+                url: file://auth_data.yaml  # <- The stream will be loaded by a FileImporter() object.
+
+      Important Remarks
+
+        - YAML anchors do not fully work with this solution. The YAML copy
+          operator (``<<: *ANCHOR``) works, but this needed some magic (sorry
+          'bout that, it has thourough comments in the code).
+
+        - The behaviour of these methods (particulatly relative stream name
+          resolution in :class:`YAMLImporter`) is *undefined*. E.g.: importing
+          from an *http* URL, which then references a relative *file*
+          path---the result will probably be a concatenation of the http URL
+          and the file path.
     """
 
     def __init__(self, parser):
@@ -203,32 +254,62 @@ class YAMLImport(object):
             parser = importer.get_parser_instance(loader)
             with parser:
                 data_node = parser.get_single_node()
-                # Anchors refer to the original node object, so imported objects
-                # cannot be referenced directly.
-                # Here, the original node is updated with the new data so at least
-                # the copy operator (<<: *ANCHOR) works.
+                # We are loading a YAML object here, which should replace the
+                # original object. And there's a problem with YAML anchors.
+                #
+                # All YAML anchors refer to the *original* node object, so
+                # imported objects cannot be referenced. So we cannot simply
+                # return the newly lodad object.
+                #
+                # The workaround here is that the original node *object* is
+                # updated with the new *data* so at least the YAML copy
+                # operator (<<: *ANCHOR) works.
+                #
                 # (Full-fledged importing could only work (maybe!) with a
-                #  reimplemented yaml Reader.)
+                # reimplemented yaml Reader.)
                 node.tag = data_node.tag
                 node.value = data_node.value
                 return parser.render_node(data_node)
 
-    def get_parser(self, loader, **kwargs):
-        raise NotImplementedError()
-
 class YAMLImporter(factory.MultiBackend):
+    """
+    Subclasses must implement stream reading for :class:`YAMLImport`.
+
+    :param parser: The class of the parser to be instantiated to import this
+      stream.
+    """
+
     def __init__(self, parser, **data):
         self.parser = parser
         self.stream = None
         self.__dict__.update(data)
 
     def _filename(self):
+        """
+        Get the path of the stream to be loaded. This path will be interpreted
+        by :meth:`_stream_name`.
+        """
         raise NotImplementedError()
+
     def _stream_name(self, basefile, filename):
+        """
+        Construct the full stream URI from the base filename and the current
+        stream's filename.  """
         raise NotImplementedError()
+
     def _open_stream(self, stream_name):
+        """
+        Open the stream to be processed. Called when *instantiating the parser*
+        from :meth:`get_parser_instance`, *not* from context management
+        (``__enter__``).
+        """
         raise NotImplementedError()
+
     def _close_stream(self):
+        """
+        Called by the context manager (``__exit__``). In a subclass, this
+        method must ensure that all resources have been deallocated.
+        """
         raise NotImplementedError()
 
     def __enter__(self):
@@ -237,12 +318,18 @@ class YAMLImporter(factory.MultiBackend):
         self._close_stream()
 
     def _get_base_filename(self, loader):
+        """
+        Retrieves the filename from the current YAML loader (if present). If
+        the :meth:`_filename` is relative, it should be interpreted by
+        :meth:`_stream_name` as relative to this base filename.
+        """
         if hasattr(loader, '_filename'):
             return os.path.dirname(getattr(loader, '_filename'))
         else:
             return None
 
     def get_parser_instance(self, loader):
+        """Instantiate a parser for the stream wrapped by this object."""
         self.stream_name = self._stream_name(
             self._get_base_filename(loader), self._filename())
         return self.parser(self._open_stream(self.stream_name),
@@ -250,21 +337,24 @@ class YAMLImporter(factory.MultiBackend):
 
 @factory.register(YAMLImporter, 'file')
 class FileImporter(YAMLImporter):
+    """
+    Implements :class:`YAMLImporter` by reading a stream from a file.
+    """
     def _filename(self):
         return self.url[7:]
+
     def _stream_name(self, basefile, filename):
         return cfg_file_path(filename, basefile)
+
     def _open_stream(self, stream_name):
         logging.getLogger('occo.util') \
             .debug("Importing YAML file: '%s'", stream_name)
         self.stream = open(stream_name)
         return self.stream
+
     def _close_stream(self):
         if self.stream:
             self.stream.close()
-
-yaml.add_constructor('!yaml_import', YAMLImport(YAMLLoad_Parsed))
-yaml.add_constructor('!text_import', YAMLImport(YAMLLoad_Raw))
 
 class PythonImport:
     """
@@ -294,10 +384,11 @@ class PythonImport:
         cloud_handler: !CloudHandler
             protocol: boto
             name: LPDS
+
+    .. todo:: Make a global list of modules imported.
     """
     def __call__(self, loader, node):
         return [__import__(module.value) for module in node.value]
-yaml.add_constructor('!python_import', PythonImport())
 
 def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     default_config.setdefault('cfg', None)
@@ -343,3 +434,10 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     log.info('Using config file: %r', cfg.cfg_path)
 
     return cfg
+
+#
+# Register YAML constructors
+#
+yaml.add_constructor('!python_import', PythonImport())
+yaml.add_constructor('!yaml_import', YAMLImport(YAMLLoad_Parsed))
+yaml.add_constructor('!text_import', YAMLImport(YAMLLoad_Raw))
