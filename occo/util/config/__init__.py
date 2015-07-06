@@ -188,7 +188,7 @@ class YAMLImport(object):
     The mapping must contain a node called 'url'. The actual work is done by a
     :class:`YAMLImporter` instantiated based on the chema of this URL.
 
-    *Summary*
+    **Summary**
 
         - The URL determines the *source* of the data stream (file, URL, s3,
           etc.), which is accessed by the specific :class:`YAMLImporter` backend.
@@ -222,7 +222,7 @@ class YAMLImport(object):
             auth_data: !yaml_import         # <- Content will be interpreted as YAML; by a YAMLLoad_Parsed() object.
                 url: file://auth_data.yaml  # <- The stream will be loaded by a FileImporter() object.
 
-    *Important Remarks*
+    **Important Remarks**
 
         - YAML anchors do not fully work with this solution. The YAML copy
           operator (``<<: *ANCHOR``) works, but this needed some magic (sorry
