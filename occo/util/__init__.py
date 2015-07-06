@@ -16,7 +16,6 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'logged', 'yamldump',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
-           'HTTPTimeout', 'HTTPError', 'ConnectionError',
            'HTTPStatusRange',
            'dict_get', 'dict_merge']
 
@@ -100,7 +99,7 @@ def set_config_base_dir(path, use_dir=False, prefix=True):
     is set to ``False``. This helps "jailing" applications using
     ``cfg_file_path`` inside virtualenvs.
 
-    Note that :fun:`cfg_file_path` will not resolve a relative base directory,
+    Note that :func:`cfg_file_path` will not resolve a relative base directory,
     so the behaviour will depend on the caller.
 
     :param str path: Either the config base path or a file in it (depends on
