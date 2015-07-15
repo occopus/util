@@ -1,0 +1,6 @@
+READY = "ready"
+PENDING = "pending"
+SHUTDOWN = "shutdown"
+UNKNOWN = "unknown"
+TMP_FAIL = "temp_failed"
+FAIL = "failed"
