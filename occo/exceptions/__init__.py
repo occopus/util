@@ -12,6 +12,7 @@ from __future__ import absolute_import
 from .infobroker import *
 from .communication import *
 from .api import *
+from .orchestration import *
 
 class ConfigurationError(Exception):
     """Raised by communication classes, if the given configuration is bad, or
