@@ -10,20 +10,35 @@
 class InfraProcessorError(Exception):
     """
     Exception raised when performing InfraProcessor command objects.
+
+    :param str infra_id: The identifier of the affected infrastructure.
+    :param Exception reason: The original error that has happened.
+    :param * args: Arguments for the :class:`Exception` class.
+    :param ** kwargs: Additional data, which will be stored in the object's
+        ``__dict__`` attribute.
     """
-    pass
+    def __init__(self, infra_id, reason=None, *args, **kwargs):
+        Exception.__init__(self, *args)
+        self.__dict__.update(**kwargs)
+        self.infra_id = infra_id
+        self.reason = reason
+
+    def __repr__(self):
+        return '{classname}({infraid!r}, {reason}, {args})'.format(
+            classname=self.__class__.__name__,
+            infraid=self.infra_id,
+            reason=self.reason,
+            args=', '.join(repr(i) for i in self.args))
+
+    def __str__(self):
+        return repr(self)
 
 class CriticalInfraProcessorError(InfraProcessorError):
     """
-    A subclass of :class:`InfraProcessorError`\ s that signal the suspension of
-    the maintenance of the infrastructure.
-
-    :param str infra_id: The identifier of the affected infrastructure.
-    :param * args: Arguments for the :class:`Exception` class.
+    A subclass of :class:`InfraProcessorError`\ s that signals the suspension
+    of the maintenance of the infrastructure.
     """
-    def __init__(self, infra_id, *args):
-        Exception.__init__(self, *args)
-        self.infra_id = infra_id
+    pass
 
 class NodeCreationError(CriticalInfraProcessorError):
     """
@@ -37,7 +52,11 @@ class NodeCreationError(CriticalInfraProcessorError):
     """
     def __init__(self, instance_data, reason=None):
         super(NodeCreationError, self).__init__(instance_data['infra_id'],
+                                                reason,
                                                 'Node creation error',
                                                 instance_data['node_id'])
         self.instance_data = instance_data
-        self.reason = reason
+
+    def __repr__(self):
+        return 'NodeCreationError({0!r}, {1!r})'.format(self.instance_data,
+                                                        self.reason)
