@@ -60,3 +60,9 @@ class NodeCreationError(CriticalInfraProcessorError):
     def __repr__(self):
         return 'NodeCreationError({0!r}, {1!r})'.format(self.instance_data,
                                                         self.reason)
+
+class InfrastructureCreationError(CriticalInfraProcessorError):
+    """
+    Critical error happening when creating the infrastructure.
+    """
+    pass
