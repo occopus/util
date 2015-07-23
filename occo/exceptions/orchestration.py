@@ -33,6 +33,13 @@ class InfraProcessorError(Exception):
     def __str__(self):
         return repr(self)
 
+class MinorInfraProcessorError(InfraProcessorError):
+    """
+    A subclass of :class:`InfraProcessorError`\ s that signals a trivial error
+    that can be ignored in respect to the overall infrastructure.
+    """
+    pass
+
 class CriticalInfraProcessorError(InfraProcessorError):
     """
     A subclass of :class:`InfraProcessorError`\ s that signals the suspension
