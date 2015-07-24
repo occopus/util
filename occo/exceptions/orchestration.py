@@ -65,8 +65,10 @@ class NodeCreationError(CriticalInfraProcessorError):
         self.instance_data = instance_data
 
     def __repr__(self):
-        return 'NodeCreationError({0!r}, {1!r})'.format(self.instance_data,
-                                                        self.reason)
+        return '{classname}({instance_data!r}, {reason!r})'.format(
+            self.__class__.__name__,
+            self.instance_data,
+            self.reason)
 
 class InfrastructureCreationError(CriticalInfraProcessorError):
     """
