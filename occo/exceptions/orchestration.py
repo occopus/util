@@ -25,7 +25,7 @@ class CriticalInfraProcessorError(InfraProcessorError):
         Exception.__init__(self, *args)
         self.infra_id = infra_id
 
-class NoMatchingNodeDefiniton(CriticalInfraProcessorError):
+class NoMatchingNodeDefinition(CriticalInfraProcessorError):
     """
         Exception raised when there are no matching node definitions. Raised by
         uds.get_node_definition
