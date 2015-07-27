@@ -25,6 +25,16 @@ class CriticalInfraProcessorError(InfraProcessorError):
         Exception.__init__(self, *args)
         self.infra_id = infra_id
 
+class NoMatchingNodeDefiniton(CriticalInfraProcessorError):
+    """
+        Exception raised when there are no matching node definitions. Raised by
+        uds.get_node_definition
+    """
+    def __init__(self, infra_id, preselected_backend_ids, *args):
+        super(NoMatchingNodeDefinition,
+              self).__init__(infra_id, 'No matching node definition', *args)
+        self.preselected_backend_ids = preselected_backend_ids
+
 class NodeCreationError(CriticalInfraProcessorError):
     """
     Critical error happening in the process of creating a node. Upon such an
