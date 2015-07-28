@@ -110,13 +110,35 @@ class NodeContextSchemaError(NodeCreationError):
         super(self.__class__, self).__init__(None, reason)
         self.node_definition = node_definition
         self.msg = msg
-        print str(self) #!!!
 
     def __repr__(self):
         return '{classname}({node_definition!r}, {reason!r})'.format(
             classname=self.__class__.__name__,
             node_definition=self.node_definition,
             reason=self.reason)
+
+    def __str__(self):
+        if self.msg:
+            return self.msg
+        else:
+            return super(self.__class__, self).__str__()
+
+class NodeCreationTimeOutError(NodeCreationError):
+    """
+    Error happening when timout is reached in the process of creating node. 
+    Upon such an error, the maintenance of the infrastructure must be same as in case of
+    NodeCreationError.
+
+    :param dict instance_data: The instance data pertaining to the (partially)
+        created node. If partial, it must contain at least the ``infra_id`` and
+        the ``node_id`` involved.
+    :param Exception reason: The original error that has happened.
+    """
+    def __init__(self, instance_data, reason=None, msg=None):
+        super(self.__class__, self).__init__(instance_data, reason)
+        self.instance_data = instance_data
+        self.reason = reason
+        self.msg = msg
 
     def __str__(self):
         if self.msg:
