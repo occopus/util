@@ -68,18 +68,61 @@ class NodeCreationError(CriticalInfraProcessorError):
         the ``node_id`` involved.
     :param Exception reason: The original error that has happened.
     """
-    def __init__(self, instance_data, reason=None):
-        super(NodeCreationError, self).__init__(instance_data['infra_id'],
-                                                reason,
-                                                'Node creation error',
-                                                instance_data['node_id'])
+    def __init__(self, instance_data=None, reason=None):
+        self.reason = reason
         self.instance_data = instance_data
+
+    @property
+    def instance_data(self):
+        return self._instance_data
+
+    @instance_data.setter
+    def instance_data(self, instance_data):
+        self._instance_data = instance_data
+        if instance_data:
+            super(NodeCreationError, self).__init__(
+                    instance_data['infra_id'],
+                    self.reason,
+                    'Node creation error',
+                    instance_data['node_id'])
+        else:
+            super(NodeCreationError, self).__init__(
+                    None, self.reason, 'Node creation error', None)
 
     def __repr__(self):
         return '{classname}({instance_data!r}, {reason!r})'.format(
             self.__class__.__name__,
             self.instance_data,
             self.reason)
+
+class NodeContextSchemaError(NodeCreationError):
+    """
+    Error happening in the process of checking the context string syntax. Upon such an
+    error, the maintenance of the infrastructure must be same as in case of
+    NodeCreationError.
+
+    :param dict instance_data: The instance data pertaining to the (partially)
+        created node. If partial, it must contain at least the ``infra_id`` and
+        the ``node_id`` involved.
+    :param Exception reason: The original error that has happened.
+    """
+    def __init__(self, node_definition, reason=None, msg=None):
+        super(self.__class__, self).__init__(None, reason)
+        self.node_definition = node_definition
+        self.msg = msg
+        print str(self) #!!!
+
+    def __repr__(self):
+        return '{classname}({node_definition!r}, {reason!r})'.format(
+            classname=self.__class__.__name__,
+            node_definition=self.node_definition,
+            reason=self.reason)
+
+    def __str__(self):
+        if self.msg:
+            return self.msg
+        else:
+            return super(self.__class__, self).__str__()
 
 class InfrastructureCreationError(CriticalInfraProcessorError):
     """
