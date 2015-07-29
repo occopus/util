@@ -136,8 +136,6 @@ class NodeCreationTimeOutError(NodeCreationError):
     """
     def __init__(self, instance_data, reason=None, msg=None):
         super(self.__class__, self).__init__(instance_data, reason)
-        self.instance_data = instance_data
-        self.reason = reason
         self.msg = msg
 
     def __str__(self):
