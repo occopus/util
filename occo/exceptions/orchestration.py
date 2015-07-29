@@ -144,6 +144,20 @@ class NodeCreationTimeOutError(NodeCreationError):
         else:
             return super(self.__class__, self).__str__()
 
+class NodeFailedError(NodeCreationError):
+    """
+    This exception is raised when a node becomes finalized while creating it.
+    I.e., it failes, or is shut down unexpectedly.
+
+    :param dict instance_data: The instance data pertaining to the (partially)
+        created node. If partial, it must contain at least the ``infra_id`` and
+        the ``node_id`` involved.
+    :param str state: The final state of the node.
+    """
+    def __init__(self, instance_data, state):
+        super(self.__class__, self).__init__(instance_data)
+        self.state = state
+
 class InfrastructureCreationError(CriticalInfraProcessorError):
     """
     Critical error happening when creating the infrastructure.
