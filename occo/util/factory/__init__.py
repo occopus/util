@@ -108,7 +108,7 @@ class YAMLConstructor(object):
         except Exception as ex:
             raise exc.ConfigurationError(
                 'config',
-                'Abstract factory error while parsing YAML: %s'%ex,
+                'Abstract factory error while parsing YAML: {0}'.format(ex),
                 loader, node)
 
 class register(object):
@@ -128,7 +128,7 @@ class register(object):
             target = self.target
             target.backends = dict()
             constructor_name = '!{0}'.format(target.__name__)
-            log.debug("Adding YAML constructor for '%s' as '%s'",
+            log.debug("Adding YAML constructor for %r as %r",
                       target.__name__, constructor_name)
             yaml.add_constructor(constructor_name, YAMLConstructor(target))
 
@@ -161,10 +161,11 @@ class MultiBackend(object):
         if not hasattr(cls, 'backends'):
             raise exc.ConfigurationError(
                 'backends',
-                "The MultiBackend class '%s' has no registered backends."%cls.__name__)
+                ("The MultiBackend class {0!r} "
+                 "has no registered backends.").format(cls.__name__))
         if not protocol in cls.backends:
             raise exc.ConfigurationError('protocol',
-                'The backend specified (%s) does not exist'%protocol)
+                'The backend specified ({0}) does not exist'.format(protocol))
 
         log.debug('Instantiating a backend for %s; protocol: %r',
                   cls.__name__, protocol)

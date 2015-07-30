@@ -21,7 +21,7 @@ class CommunicationError(Exception):
     def __init__(self, http_code, reason=None):
         self.http_code, self.reason = http_code, reason
     def __str__(self):
-        return '[HTTP %d] %s'%(self.http_code, self.reason)
+        return '[HTTP {0.http_code}] {0.reason}'.format(self)
 
 class TransientError(CommunicationError):
     """A :class:`CommunicationError` that is raised when a transient error occurs.

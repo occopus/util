@@ -35,7 +35,7 @@ class ConfigTest(unittest.TestCase):
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
         data = cfg.yaml_load_file(self.filename)
-        print '%r'%data
+        print repr(data)
         self.assertIn('child1', data)
         child1 = data['child1']
         self.assertIs(type(child1), dict)

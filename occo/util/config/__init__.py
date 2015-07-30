@@ -348,7 +348,7 @@ class FileImporter(YAMLImporter):
 
     def _open_stream(self, stream_name):
         logging.getLogger('occo.util') \
-            .debug("Importing YAML file: '%s'", stream_name)
+            .debug("Importing YAML file: %r", stream_name)
         self.stream = open(stream_name)
         return self.stream
 

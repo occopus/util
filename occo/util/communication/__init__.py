@@ -92,7 +92,7 @@ Example
 
     def core_func(msg):
         print msg
-        retval = 'hello, %s'%msg
+        retval = 'hello, {0}'.format(msg)
         return comm.Response(200, retval)
 
     cons = comm.EventDrivenConsumer(core_func, **cfg.mqconfig)
@@ -112,7 +112,7 @@ Example
 
     def core_func(msg):
         print msg
-        retval = 'hello, %s'%msg
+        retval = 'hello, {0}'.format(msg)
         return comm.Response(200, retval)
 
     cancel = threading.Event()

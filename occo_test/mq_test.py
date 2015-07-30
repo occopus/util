@@ -65,11 +65,11 @@ class MQConnectionTest(unittest.TestCase):
             log.debug('Test connection consumer_rpc')
     def i_test_rpc(self):
         MSG = str(uuid.uuid4())
-        EXPECTED = 'RE: %s'%MSG
+        EXPECTED = 'RE: {0}'.format(MSG)
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            return comm.Response(200, 'RE: %s'%msg)
+            return comm.Response(200, 'RE: {0}'.format(msg))
         p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer.instantiate(
             processor=consumer_core, cancel_event=e,
@@ -97,11 +97,11 @@ class MQConnectionTest(unittest.TestCase):
 
     def test_rpc_error(self):
         MSG = str(uuid.uuid4())
-        EXPECTED = 'RE: %s'%MSG
+        EXPECTED = 'RE: {0}'.format(MSG)
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
-            return comm.Response(400, 'RE: %s'%msg)
+            return comm.Response(400, 'RE: {0}'.format(msg))
         p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer.instantiate(
             processor=consumer_core, cancel_event=e,
@@ -125,7 +125,7 @@ class MQConnectionTest(unittest.TestCase):
 
     def test_rpc_500_exception(self):
         MSG = str(uuid.uuid4())
-        EXPECTED = 'RE: %s'%MSG
+        EXPECTED = 'RE: {0}'.format(MSG)
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
@@ -153,7 +153,7 @@ class MQConnectionTest(unittest.TestCase):
 
     def test_rpc_comm_exception(self):
         MSG = str(uuid.uuid4())
-        EXPECTED = 'RE: %s'%MSG
+        EXPECTED = 'RE: {0}'.format(MSG)
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('RPC Consumer: message has arrived')
@@ -181,12 +181,12 @@ class MQConnectionTest(unittest.TestCase):
 
     def i_test_rpc_double(self):
         salt = str(uuid.uuid4())
-        MSG, MSG2 = salt, 'hello-%s'%salt
-        EXPECTED, EXPECTED2 = 'RE: %s'%MSG, 'RE: %s'%MSG2
+        MSG, MSG2 = salt, 'hello-{0}'.format(salt)
+        EXPECTED, EXPECTED2 = 'RE: {0}'.format(MSG), 'RE: {0}'.format(MSG2)
         e = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Double RPC Consumer: message has arrived')
-            return comm.Response(200, 'RE: %s'%msg)
+            return comm.Response(200, 'RE: {0}'.format(msg))
         p = comm.RPCProducer.instantiate(**cfg.endpoints['producer_rpc'])
         c = comm.EventDrivenConsumer.instantiate(
             processor=consumer_core, cancel_event=e,
@@ -222,7 +222,7 @@ class MQConnectionTest(unittest.TestCase):
         r = threading.Event()
         def consumer_core(msg, *args, **kwargs):
             log.debug('Async Consumer: message has arrived')
-            self.data = 'RE: %s'%msg
+            self.data = 'RE: {0}'.format(msg)
             log.debug('Async Consumer: setting response event')
             r.set()
             log.debug('Async consumer: response event has been set')
@@ -251,4 +251,4 @@ class MQConnectionTest(unittest.TestCase):
 
 def setup_module():
     import os
-    log.info('PID: %d', os.getpid())
+    log.info('PID: {0}'.format(os.getpid()))
