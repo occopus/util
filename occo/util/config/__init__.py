@@ -374,7 +374,7 @@ class PythonImport:
 
         autoimport: !python_import
             - occo.infobroker
-            - occo.infobroker.cloud_provider
+            - occo.infobroker.dsprovider
             - occo.infobroker.uds
             - occo.cloudhandler
             - occo.cloudhandler.backends.boto
