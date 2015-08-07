@@ -17,7 +17,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
            'HTTPStatusRange',
-           'dict_get', 'dict_merge']
+           'dict_get', 'dict_merge', 'dict_map']
 
 import itertools
 import logging
@@ -589,3 +589,13 @@ def dict_merge(dst, src):
         return dst
 
     return rec_merge(dst, src)
+
+def dict_map(items, value_trans=identity, key_trans=identity):
+    """
+    Transform dictionary using two transformation functions.
+
+    :param dict items: The dictionary to be transformed.
+    :param function value_trans: The transformation to be applied to values.
+    :param function key_trans: The transformation to be applied to keys.
+    """
+    return dict((key_trans(k), value_trans(v)) for k, v in items.iteritems())
