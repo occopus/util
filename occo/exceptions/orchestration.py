@@ -158,6 +158,9 @@ class NodeFailedError(NodeCreationError):
         super(self.__class__, self).__init__(instance_data)
         self.state = state
 
+    def __str__(self):
+        return "Node has failed (state={0})".format(self.state)
+
 class InfrastructureCreationError(CriticalInfraProcessorError):
     """
     Critical error happening when creating the infrastructure.
