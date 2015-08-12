@@ -236,3 +236,23 @@ class CoalesceTest(unittest.TestCase):
 
         dres = util.dict_merge(d1, d2)
         self.assertEqual(dexp, dres)
+
+    def test_find_effective_setting(self):
+        def testsettings():
+            yield 'a', None
+            yield 'b', 1
+            yield 'c', 2
+
+        def badsettings():
+            yield 'a', None
+            yield 'b', None
+            yield 'c', None
+
+        with self.assertRaises(TypeError):
+            util.find_effective_setting([None, None, 2])
+        with self.assertRaises(RuntimeError):
+            util.find_effective_setting(badsettings())
+        s, d = util.find_effective_setting(badsettings(), True)
+        self.assertEqual((s, d), ('default', None))
+        s, d = util.find_effective_setting(testsettings(), True)
+        self.assertEqual((s, d), ('b', 1))

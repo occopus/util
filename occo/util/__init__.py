@@ -8,6 +8,7 @@
 """
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
+           'find_effective_setting',
            'Cleaner', 'wet_method',
            'rel_to_file', 'cfg_file_path', 'config_base_dir',
            'set_config_base_dir',
@@ -21,6 +22,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
 
 import itertools
 import logging
+import sys
 
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.
@@ -599,3 +601,31 @@ def dict_map(items, value_trans=identity, key_trans=identity):
     :param function key_trans: The transformation to be applied to keys.
     """
     return dict((key_trans(k), value_trans(v)) for k, v in items.iteritems())
+
+def find_effective_setting(possibilities, default_none=False):
+    """
+    Like coalesce, but specifically to find an effective setting.
+
+    :param iterable possibilities: An iterable containing *pairs*: the first
+        element is the source of the setting, the second is the value of the
+        setting. The value will be tested whether it's specified, the first
+        not-None is returned. The source can be used in log files, user
+        information, and for debugging.
+    :param bool default_none: If ``True``, ``(None, None)`` is returned if none
+        of the settings were specified (all ``None``).
+
+    :raises TypeError: if an item is not a pair.
+    :raises RuntimeError: if all values are ``None``, and ``default_none`` is
+        ``False``.
+    """
+    for i in possibilities:
+        try:
+            if i[1] is not None:
+                return i
+        except IndexError:
+            raise TypeError('Wrong item type', i), None, sys.exc_info()[2]
+
+    if not default_none:
+        raise RuntimeError('No effective setting found')
+
+    return 'default', None
