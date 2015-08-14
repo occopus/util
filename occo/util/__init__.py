@@ -592,6 +592,8 @@ def dict_merge(dst, src):
 
     return rec_merge(dst, src)
 
+def pair_map(pairs, value_trans=identity, key_trans=identity):
+    return ((key_trans(k), value_trans(v)) for k, v in pairs)
 def dict_map(items, value_trans=identity, key_trans=identity):
     """
     Transform dictionary using two transformation functions.
@@ -600,7 +602,7 @@ def dict_map(items, value_trans=identity, key_trans=identity):
     :param function value_trans: The transformation to be applied to values.
     :param function key_trans: The transformation to be applied to keys.
     """
-    return dict((key_trans(k), value_trans(v)) for k, v in items.iteritems())
+    return dict(pair_map(items.iteritems(), value_trans, key_trans))
 
 def find_effective_setting(possibilities, default_none=False):
     """
