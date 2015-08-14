@@ -403,6 +403,22 @@ class wet_method(object):
 
         return wethod
 
+class global_dry_run(object):
+    """
+    Context manager for setting and unsetting the global dry_run flag.
+
+    *IMPORTANT:* This is *not* thread safe, one such context will set the flag
+    globally (hence the name!). This should only be used in tests, with
+    caution.
+    """
+    def __enter__(self):
+        global dry_run
+        dry_run = True
+
+    def __exit__(self, *args):
+        global dry_run
+        dry_run =False
+
 class logged(object):
     """
     Auxiliary decorator for debugging functions.
