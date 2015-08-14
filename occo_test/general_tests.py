@@ -13,6 +13,7 @@ import logging.config
 
 with open(util.rel_to_file('logging.yaml')) as f:
     logging.config.dictConfig(yaml.load(f))
+log = logging.getLogger('occo.test')
 
 class DummyException(Exception):
     pass
@@ -154,6 +155,17 @@ class GeneralTest(unittest.TestCase):
                 return x
         self.assertEqual(WC(False).wc(5), 5)
         self.assertEqual(WC(True).wc(5), 1)
+        WC.dry_run = True
+        self.assertEqual(WC(False).wc(5), 1)
+        WC.dry_run = False
+        global dry_run
+        dry_run = True
+        log.debug('%r', WC.__module__)
+        self.assertEqual(WC(False).wc(5), 1)
+        dry_run = False
+        occo.util.dry_run = True
+        self.assertEqual(WC(False).wc(5), 1)
+        occo.util.dry_run = False
 
     def test_logged_function(self):
         items = list()
