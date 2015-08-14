@@ -8,11 +8,17 @@ import unittest
 import yaml
 import uuid, requests.exceptions as exc
 import occo.util as util
+import logging
+import logging.config
+
+with open(util.rel_to_file('logging.yaml')) as f:
+    logging.config.dictConfig(yaml.load(f))
+log = logging.getLogger('occo.test')
 
 class DummyException(Exception):
     pass
 
-class CoalesceTest(unittest.TestCase):
+class GeneralTest(unittest.TestCase):
     def test_i_empty(self):
         self.assertIsNone(util.icoalesce([]))
     def test_i_default(self):
@@ -147,8 +153,23 @@ class CoalesceTest(unittest.TestCase):
             @util.wet_method(1)
             def wc(self, x):
                 return x
+            @util.wet_method(2, True)
+            def wc2(self, x):
+                return x
         self.assertEqual(WC(False).wc(5), 5)
         self.assertEqual(WC(True).wc(5), 1)
+        self.assertEqual(WC(False).wc2(5), 2)
+        WC.dry_run = True
+        self.assertEqual(WC(False).wc(5), 1)
+        WC.dry_run = False
+        global dry_run
+        dry_run = True
+        log.debug('%r', WC.__module__)
+        self.assertEqual(WC(False).wc(5), 1)
+        dry_run = False
+        util.dry_run = True
+        self.assertEqual(WC(False).wc(5), 1)
+        util.dry_run = False
 
     def test_logged_function(self):
         items = list()
