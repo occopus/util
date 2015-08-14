@@ -369,8 +369,9 @@ class wet_method(object):
     :param def_retval: The default value to be returned when the function
         execution is omitted.
     """
-    def __init__(self, def_retval=None):
+    def __init__(self, def_retval=None, dry_run=False):
         self.def_retval = def_retval
+        self.dry_run = dry_run
 
     def __call__(self, fun):
         import functools
@@ -380,6 +381,7 @@ class wet_method(object):
             log = logging.getLogger('occo.util')
             def sources():
                 yield 'object', fun_self_
+                yield 'method', self
                 yield 'class', fun_self_.__class__
                 yield 'module', sys.modules[fun_self_.__class__.__module__]
                 yield 'global', sys.modules[__name__]

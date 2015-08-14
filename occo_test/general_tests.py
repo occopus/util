@@ -153,8 +153,12 @@ class GeneralTest(unittest.TestCase):
             @util.wet_method(1)
             def wc(self, x):
                 return x
+            @util.wet_method(2, True)
+            def wc2(self, x):
+                return x
         self.assertEqual(WC(False).wc(5), 5)
         self.assertEqual(WC(True).wc(5), 1)
+        self.assertEqual(WC(False).wc2(5), 2)
         WC.dry_run = True
         self.assertEqual(WC(False).wc(5), 1)
         WC.dry_run = False
