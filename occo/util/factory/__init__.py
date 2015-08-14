@@ -77,7 +77,7 @@ __all__ = ['register', 'MultiBackend']
 
 import occo.exceptions as exc
 import occo.util as util
-import yaml
+import yaml, sys
 import logging
 
 log = logging.getLogger('occo.util')
@@ -109,7 +109,7 @@ class YAMLConstructor(object):
             raise exc.ConfigurationError(
                 'config',
                 'Abstract factory error while parsing YAML: {0}'.format(ex),
-                loader, node)
+                loader, node), None, sys.exc_info()[2]
 
 class register(object):
     """Decorator class to register backends for the abstract classes.
