@@ -77,7 +77,7 @@ __all__ = ['register', 'MultiBackend']
 
 import occo.exceptions as exc
 import occo.util as util
-import yaml
+import yaml, sys
 import logging
 
 log = logging.getLogger('occo.util')
@@ -109,7 +109,7 @@ class YAMLConstructor(object):
             raise exc.ConfigurationError(
                 'config',
                 'Abstract factory error while parsing YAML: {0}'.format(ex),
-                loader, node)
+                loader, node), None, sys.exc_info()[2]
 
 class register(object):
     """Decorator class to register backends for the abstract classes.
@@ -158,19 +158,23 @@ class MultiBackend(object):
             does not exist.
         """
 
-        if not hasattr(cls, 'backends'):
-            raise exc.ConfigurationError(
-                'backends',
-                ("The MultiBackend class {0!r} "
-                 "has no registered backends.").format(cls.__name__))
-        if not protocol in cls.backends:
-            raise exc.ConfigurationError('protocol',
-                'The backend specified ({0}) does not exist'.format(protocol))
+        if protocol is None:
+            log.debug('Factory: Instantiating %s itself', cls.__name__)
+            objclass = cls
+        else:
+            if not hasattr(cls, 'backends'):
+                raise exc.ConfigurationError(
+                    'backends',
+                    ("The MultiBackend class {0!r} "
+                     "has no registered backends.").format(cls.__name__))
+            if not protocol in cls.backends:
+                raise exc.ConfigurationError('protocol',
+                    'The backend {0!r} does not exist'.format(protocol))
+            log.debug('Instantiating a backend for %s; protocol: %r',
+                      cls.__name__, protocol)
+            objclass = cls.backends[protocol]
 
-        log.debug('Instantiating a backend for %s; protocol: %r',
-                  cls.__name__, protocol)
-        objclass = cls.backends[protocol]
-        obj = object.__new__(cls.backends[protocol])
+        obj = object.__new__(objclass)
         objclass.__init__(obj, *args, **kwargs)
         return obj
 
