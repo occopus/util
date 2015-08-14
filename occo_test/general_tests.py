@@ -8,6 +8,11 @@ import unittest
 import yaml
 import uuid, requests.exceptions as exc
 import occo.util as util
+import logging
+import logging.config
+
+with open(util.rel_to_file('logging.yaml')) as f:
+    logging.config.dictConfig(yaml.load(f))
 
 class DummyException(Exception):
     pass
