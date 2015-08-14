@@ -377,15 +377,18 @@ class wet_method(object):
 
         @functools.wraps(fun)
         def wethod(fun_self_, *args, **kwargs):
+            log = logging.getLogger('occo.util')
             def sources():
                 yield 'object', fun_self_
+                yield 'class', fun_self_.__class__
+                yield 'module', sys.modules[fun_self_.__class__.__module__]
+                yield 'global', sys.modules[__name__]
             def getvalue(o):
                 return getattr(o, 'dry_run', False)
             dry_run_set_at = next(
                 (src for src, value in pair_map(sources(), getvalue) if value),
                 None)
             if dry_run_set_at is not None:
-                log = logging.getLogger('occo.util')
                 log.warning('Dry run (specified at %s level): '
                             'omitting method execution for %s.%s.%s',
                             dry_run_set_at,
