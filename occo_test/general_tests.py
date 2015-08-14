@@ -163,9 +163,9 @@ class GeneralTest(unittest.TestCase):
         log.debug('%r', WC.__module__)
         self.assertEqual(WC(False).wc(5), 1)
         dry_run = False
-        occo.util.dry_run = True
+        util.dry_run = True
         self.assertEqual(WC(False).wc(5), 1)
-        occo.util.dry_run = False
+        util.dry_run = False
 
     def test_logged_function(self):
         items = list()
