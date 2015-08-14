@@ -369,17 +369,31 @@ class wet_method(object):
     :param def_retval: The default value to be returned when the function
         execution is omitted.
     """
-    def __init__(self, def_retval=None):
+    def __init__(self, def_retval=None, dry_run=False):
         self.def_retval = def_retval
+        self.dry_run = dry_run
 
     def __call__(self, fun):
         import functools
 
         @functools.wraps(fun)
         def wethod(fun_self_, *args, **kwargs):
-            if getattr(fun_self_, 'dry_run', False):
-                log = logging.getLogger('occo.util')
-                log.warning('Dry run: omitting method execution for %s.%s.%s',
+            log = logging.getLogger('occo.util')
+            def sources():
+                yield 'object', fun_self_
+                yield 'method', self
+                yield 'class', fun_self_.__class__
+                yield 'module', sys.modules[fun_self_.__class__.__module__]
+                yield 'global', sys.modules[__name__]
+            def getvalue(o):
+                return getattr(o, 'dry_run', False)
+            dry_run_set_at = next(
+                (src for src, value in pair_map(sources(), getvalue) if value),
+                None)
+            if dry_run_set_at is not None:
+                log.warning('Dry run (specified at %s level): '
+                            'omitting method execution for %s.%s.%s',
+                            dry_run_set_at,
                             fun_self_.__class__.__module__,
                             fun_self_.__class__.__name__,
                             fun.__name__)
@@ -388,6 +402,22 @@ class wet_method(object):
                 return fun(fun_self_, *args, **kwargs)
 
         return wethod
+
+class global_dry_run(object):
+    """
+    Context manager for setting and unsetting the global dry_run flag.
+
+    *IMPORTANT:* This is *not* thread safe, one such context will set the flag
+    globally (hence the name!). This should only be used in tests, with
+    caution.
+    """
+    def __enter__(self):
+        global dry_run
+        dry_run = True
+
+    def __exit__(self, *args):
+        global dry_run
+        dry_run =False
 
 class logged(object):
     """
@@ -592,6 +622,8 @@ def dict_merge(dst, src):
 
     return rec_merge(dst, src)
 
+def pair_map(pairs, value_trans=identity, key_trans=identity):
+    return ((key_trans(k), value_trans(v)) for k, v in pairs)
 def dict_map(items, value_trans=identity, key_trans=identity):
     """
     Transform dictionary using two transformation functions.
@@ -600,7 +632,7 @@ def dict_map(items, value_trans=identity, key_trans=identity):
     :param function value_trans: The transformation to be applied to values.
     :param function key_trans: The transformation to be applied to keys.
     """
-    return dict((key_trans(k), value_trans(v)) for k, v in items.iteritems())
+    return dict(pair_map(items.iteritems(), value_trans, key_trans))
 
 def find_effective_setting(possibilities, default_none=False):
     """
