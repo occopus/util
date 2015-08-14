@@ -12,7 +12,7 @@ import occo.util as util
 class DummyException(Exception):
     pass
 
-class CoalesceTest(unittest.TestCase):
+class GeneralTest(unittest.TestCase):
     def test_i_empty(self):
         self.assertIsNone(util.icoalesce([]))
     def test_i_default(self):
