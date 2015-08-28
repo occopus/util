@@ -23,7 +23,7 @@ class InfraProcessorError(Exception):
         self.reason = reason
 
     def __repr__(self):
-        return '{classname}({infraid!r}, {reason}, {args})'.format(
+        return '{classname}({infraid!r}, {reason!r}, {args})'.format(
             classname=self.__class__.__name__,
             infraid=self.infra_id,
             reason=self.reason,
