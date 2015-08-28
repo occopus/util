@@ -17,9 +17,8 @@ class InfraProcessorError(Exception):
     :param ** kwargs: Additional data, which will be stored in the object's
         ``__dict__`` attribute.
     """
-    def __init__(self, infra_id, reason=None, *args, **kwargs):
+    def __init__(self, infra_id, reason=None, *args):
         Exception.__init__(self, *args)
-        self.__dict__.update(**kwargs)
         self.infra_id = infra_id
         self.reason = reason
 
