@@ -17,14 +17,20 @@ class InfraProcessorError(Exception):
     :param ** kwargs: Additional data, which will be stored in the object's
         ``__dict__`` attribute.
     """
-    def __init__(self, infra_id, reason=None, *args, **kwargs):
+    def __init__(self, infra_id, reason=None, *args):
         Exception.__init__(self, *args)
-        self.__dict__.update(**kwargs)
         self.infra_id = infra_id
         self.reason = reason
 
+    def __reduce__(self):
+        a = super(InfraProcessorError, self).__reduce__()
+        return a[0], self.__getinitargs__(), a[2]
+
+    def __getinitargs__(self):
+        return (self.infra_id, self.reason) + self.args
+
     def __repr__(self):
-        return '{classname}({infraid!r}, {reason}, {args})'.format(
+        return '{classname}({infraid!r}, {reason!r}, {args})'.format(
             classname=self.__class__.__name__,
             infraid=self.infra_id,
             reason=self.reason,
@@ -57,6 +63,10 @@ class NoMatchingNodeDefinition(CriticalInfraProcessorError):
               self).__init__(infra_id, 'No matching node definition', *args)
         self.preselected_backend_ids = preselected_backend_ids
         self.node_type = node_type
+    def __getinitargs__(self):
+        return (self.infra_id,
+                self.preselected_backend_ids,
+                self.node_type) + self.args
 
 class NodeCreationError(CriticalInfraProcessorError):
     """
@@ -71,6 +81,9 @@ class NodeCreationError(CriticalInfraProcessorError):
     def __init__(self, instance_data=None, reason=None):
         self.reason = reason
         self.instance_data = instance_data
+
+    def __getinitargs__(self):
+        return self._instance_data, self.reason
 
     @property
     def instance_data(self):
@@ -90,9 +103,9 @@ class NodeCreationError(CriticalInfraProcessorError):
                     None, self.reason, 'Node creation error', None)
 
     def __repr__(self):
-        return '{classname}({instance_data!r}, {reason!r})'.format(
+        return '{classname}(<instance_data:{nodeid}>, {reason!r})'.format(
             classname=self.__class__.__name__,
-            instance_data=self.instance_data,
+            nodeid=self.instance_data['node_id'],
             reason=self.reason)
 
 class NodeContextSchemaError(NodeCreationError):
@@ -111,10 +124,13 @@ class NodeContextSchemaError(NodeCreationError):
         self.node_definition = node_definition
         self.msg = msg
 
+    def __getinitargs__(self):
+        return self.node_definition, self.reason, self.msg
+
     def __repr__(self):
-        return '{classname}({node_definition!r}, {reason!r})'.format(
+        return '{classname}(<node_definition:{nodeid}>, {reason!r})'.format(
             classname=self.__class__.__name__,
-            node_definition=self.node_definition,
+            nodeid=self.node_definition['node_id'],
             reason=self.reason)
 
     def __str__(self):
@@ -138,6 +154,9 @@ class NodeCreationTimeOutError(NodeCreationError):
         super(self.__class__, self).__init__(instance_data, reason)
         self.msg = msg
 
+    def __getinitargs__(self):
+        return self._instance_data, self.reason, self.msg
+
     def __str__(self):
         if self.msg:
             return self.msg
@@ -157,6 +176,9 @@ class NodeFailedError(NodeCreationError):
     def __init__(self, instance_data, state):
         super(self.__class__, self).__init__(instance_data)
         self.state = state
+
+    def __getinitargs__(self):
+        return self._instance_data, self.state
 
     def __str__(self):
         return "Node has failed (state={0})".format(self.state)
