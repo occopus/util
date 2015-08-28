@@ -277,3 +277,22 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual((s, d), ('default', None))
         s, d = util.find_effective_setting(testsettings(), True)
         self.assertEqual((s, d), ('b', 1))
+
+    def test_ip_exceptions(self):
+        import occo.exceptions.orchestration as exc
+        iid = 1
+        idata = dict(instance_id=5, node_id=3, infra_id=iid)
+
+        excs = [
+            exc.InfraProcessorError(iid, 2, 3, 4, 5),
+            exc.MinorInfraProcessorError(iid, 2),
+            exc.NoMatchingNodeDefinition(iid, ['x', 'y'], 'type', 4, 5),
+            exc.NodeCreationError(idata, 'reason'),
+            exc.NodeContextSchemaError('node_definition', 'reason'),
+            exc.NodeCreationTimeOutError(idata, 'reason'),
+            exc.NodeFailedError(idata, 'shutdown'),
+        ]
+        for e in excs:
+            y = yaml.dump(e)
+            ee = yaml.load(y)
+            self.assertEqual(ee.__dict__, e.__dict__)
