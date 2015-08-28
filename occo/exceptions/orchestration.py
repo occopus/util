@@ -103,9 +103,9 @@ class NodeCreationError(CriticalInfraProcessorError):
                     None, self.reason, 'Node creation error', None)
 
     def __repr__(self):
-        return '{classname}({instance_data!r}, {reason!r})'.format(
+        return '{classname}(<instance_data:{nodeid}>, {reason!r})'.format(
             classname=self.__class__.__name__,
-            instance_data=self.instance_data,
+            nodeid=self.instance_data['node_id'],
             reason=self.reason)
 
 class NodeContextSchemaError(NodeCreationError):
@@ -128,9 +128,9 @@ class NodeContextSchemaError(NodeCreationError):
         return self.node_definition, self.reason, self.msg
 
     def __repr__(self):
-        return '{classname}({node_definition!r}, {reason!r})'.format(
+        return '{classname}(<node_definition:{nodeid}>, {reason!r})'.format(
             classname=self.__class__.__name__,
-            node_definition=self.node_definition,
+            nodeid=self.node_definition['node_id'],
             reason=self.reason)
 
     def __str__(self):
