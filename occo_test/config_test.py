@@ -76,9 +76,10 @@ class ConfigTest(unittest.TestCase):
                                        relative_cwd=True)])
     def test_cfg_param(self):
         cfg = util.config.config
-        c = cfg(cfg_path=util.rel_to_file('comm_test_cfg.yaml',
-                                          relative_cwd=True),
-                args=[])
+        cfgfile = util.rel_to_file('comm_test_cfg.yaml', relative_cwd=True)
+        abscfgfile = util.rel_to_file('comm_test_cfg.yaml', relative_cwd=False)
+        c = cfg(cfg_path=cfgfile, args=[])
+        self.assertEqual(c.cfg_path, abscfgfile)
     def test_cfg_error(self):
         cfg = util.config.config
         with self.assertRaises(occo.exceptions.ConfigurationError):
