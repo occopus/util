@@ -411,14 +411,18 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
                            '.',
                            curried(rel_to_file, basefile=__file__),
                            cfg_file_path))
+        sys.stderr.write(
+            'No config file has been specified, '
+            'searching these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_locations)))
 
         cfg.cfg_path = path_coalesce(*possible_locations)
         if not cfg.cfg_path:
             import occo.exceptions
-            msg = ('No configuration file has been specified '
-                   'and the default paths didn\'t work:\n    '
-                   + '\n    '.join(possible_locations))
-            raise occo.exceptions.ConfigurationError(msg)
+            raise occo.exceptions.ConfigurationError('No configuration file has been found.')
+        else:
+            sys.stderr.write(
+                'Using default configuration file: {0!r}\n'.format(cfg.cfg_path))
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
