@@ -30,6 +30,10 @@ import occo.util.factory as factory
 import os, sys
 import logging
 
+DEFAULT_LOGGING_CFG = dict(
+    version=1
+)
+
 class YAMLLoad(object):
     """
     Subclasses load data from a stream as YAML data. This is an extension of
@@ -391,6 +395,9 @@ class PythonImport:
         return [__import__(module.value) for module in node.value]
 
 def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
+    """
+    Find and merge configuration sources.
+    """
     default_config.setdefault('cfg', None)
 
     #
@@ -431,7 +438,8 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     #
     import logging
     import logging.config
-    logging.config.dictConfig(cfg.configuration['logging'])
+    logging.config.dictConfig(
+        cfg.configuration.get('logging', DEFAULT_LOGGING_CFG))
 
     log = logging.getLogger('occo')
     log.info('Staring up; PID = %d', os.getpid())
