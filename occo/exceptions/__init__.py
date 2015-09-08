@@ -15,8 +15,11 @@ from .api import *
 from .orchestration import *
 
 class ConfigurationError(Exception):
-    """Raised by communication classes, if the given configuration is bad, or
-    insufficient."""
+    """Raised when a given configuration is bad, or insufficient."""
+    pass
+
+class MissingConfigurationError(ConfigurationError):
+    """Raised when a configuration item is missing and has no default."""
     pass
 
 class SchemaError(Exception):
