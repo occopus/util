@@ -8,6 +8,7 @@ import unittest
 import yaml
 import uuid, requests.exceptions as exc
 import occo.util as util
+import occo.util.config as config
 import logging
 import logging.config
 
@@ -296,3 +297,8 @@ class GeneralTest(unittest.TestCase):
             y = yaml.dump(e)
             ee = yaml.load(y)
             self.assertEqual(ee.__dict__, e.__dict__)
+
+    def test_python_import(self):
+        import occo.exceptions as exc
+        with self.assertRaises(exc.AutoImportError):
+            config.yaml_load_file(util.rel_to_file('badmod.yaml'))
