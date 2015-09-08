@@ -27,8 +27,13 @@ import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
     path_coalesce, file_locations, set_config_base_dir
 import occo.util.factory as factory
+import occo.exceptions as exc
 import os, sys
 import logging
+
+DEFAULT_LOGGING_CFG = dict(
+    version=1
+)
 
 class YAMLLoad(object):
     """
@@ -388,9 +393,18 @@ class PythonImport:
     .. todo:: Make a global list of modules imported.
     """
     def __call__(self, loader, node):
-        return [__import__(module.value) for module in node.value]
+        def import_module(modname):
+            try:
+                return __import__(modname)
+            except Exception as ex:
+                raise exc.AutoImportError(loader._filename, modname, ex)
+
+        return list(import_module(module.value) for module in node.value)
 
 def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
+    """
+    Find and merge configuration sources.
+    """
     default_config.setdefault('cfg', None)
 
     #
@@ -431,7 +445,8 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     #
     import logging
     import logging.config
-    logging.config.dictConfig(cfg.configuration['logging'])
+    logging.config.dictConfig(
+        cfg.configuration.get('logging', DEFAULT_LOGGING_CFG))
 
     log = logging.getLogger('occo')
     log.info('Staring up; PID = %d', os.getpid())
