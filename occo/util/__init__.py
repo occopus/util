@@ -419,6 +419,10 @@ class global_dry_run(object):
         global dry_run
         dry_run =False
 
+def global_dry_run_set(value):
+    global dry_run
+    dry_run = value
+
 class logged(object):
     """
     Auxiliary decorator for debugging functions.
