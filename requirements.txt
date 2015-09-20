@@ -1,5 +1,6 @@
 argparse==1.2.1
 dateutils==0.6.6
+docker-py==1.4.0
 pika==0.9.14
 python-dateutil==2.2
 pytz==2014.9
