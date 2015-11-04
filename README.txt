@@ -1,6 +1,3 @@
-===
-OCCO Common Utility Modules
-===
 
-Provides miscellaneous utilities for OCCO services. 
+Occopus Common Utility Module providing miscellaneous utilities for Occopus services. 
 
