@@ -1,0 +1,3 @@
+nothing: 0
+child1: !yaml_import
+    url: file://inner/c1.yaml

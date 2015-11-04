@@ -1,0 +1,5 @@
+testbackend: !TestFactory
+    protocol: test
+    a: 1
+logging: !yaml_import
+    url: file://logging.yaml
