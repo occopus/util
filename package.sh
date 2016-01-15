@@ -14,6 +14,7 @@ fi
 
 virtualenv --no-site-packages $PDIR
 source $PDIR/bin/activate
+pip install --upgrade pip
 pip install wheel
 pip wheel .
 deactivate
