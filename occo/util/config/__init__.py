@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 """
-Configuration primitives for the SZTAKI Cloud Orchestrator.
+Configuration primitives for the OCCO Cloud Orchestrator.
 
 .. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 
@@ -227,7 +227,7 @@ class YAMLImport(object):
     .. code-block:: yaml
         :emphasize-lines: 8,9
 
-        cloud_handler: !CloudHandler
+        resource_handler: !ResourceHandler
             protocol: boto
             name: LPDS
             dry_run: false
@@ -377,7 +377,7 @@ class PythonImport:
 
     This can be used to pre-load factory-implementation modules at the
     beginning of a YAML file. E.g.:
-    :class:`~occo.cloudhandler.backends.boto.BotoCloudHandler`.
+    :class:`~occo.resourcehandler.backends.boto.EC2ResourceHandler`.
 
     In effect, importing these modules from generic programs becomes
     unnecessary; therefore these programs become future proof. For example:
@@ -391,12 +391,12 @@ class PythonImport:
             - occo.infobroker
             - occo.infobroker.dsprovider
             - occo.infobroker.uds
-            - occo.cloudhandler
-            - occo.cloudhandler.backends.boto
+            - occo.resourcehandler
+            - occo.resourcehandler.backends.boto
             - occo.infraprocessor
 
         # The following would fail without (auto)importing the necessary modules
-        cloud_handler: !CloudHandler
+        resource_handler: !ResourceHandler
             protocol: boto
             name: LPDS
 
