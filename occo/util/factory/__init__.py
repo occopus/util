@@ -179,7 +179,7 @@ class MultiBackend(object):
                      "has no registered backends.").format(cls.__name__))
             if not protocol in cls.backends:
                 raise exc.ConfigurationError('protocol',
-                    'The backend {0!r} does not exist'.format(protocol))
+                    'The backend {0!r} does not exist. Available backends: {1!r}'.format(protocol,cls.backends))
             log.debug('Instantiating a backend for %s; protocol: %r',
                       cls.__name__, protocol)
             objclass = cls.backends[protocol]
