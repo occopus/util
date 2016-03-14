@@ -411,7 +411,7 @@ class PythonImport:
 
         return list(import_module(module.value) for module in node.value)
 
-def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
+def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path=None, **kwargs):
     """
     Find and merge configuration sources.
     """
@@ -425,6 +425,12 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
         cfg.cfg_path = cfg_file_path(cfg_path)
     else:
         cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+
+    if auth_data_path:
+        cfg.auth_data_path = auth_data_path
+    else:
+        cfg.add_argument(name='--auth_data_path', dest='auth_data_path', type=auth_data_path)
+
     if setup_args:
         setup_args(cfg)
     cfg.parse_args(**kwargs)
@@ -450,6 +456,29 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
+    #
+    ## Setup auth_data
+    #
+    if not cfg.auth_data_path:
+        possible_auth_data_locations = [
+            os.getenv('OCCOPUS_AUTH_DATA_PATH'),
+            os.path.join(os.path.expanduser('~'),'.occopus/auth_data.yaml'),
+        ]
+        sys.stderr.write(
+            'No authorisation data file has been specified, '
+            'searching these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_auth_data_locations)))
+        cfg.auth_data_path = path_coalesce(*possible_auth_data_locations)
+        if not cfg.auth_data_path:
+            import occo.exceptions
+            raise occo.exceptions.ConfigurationError('No authorisation data file has been found.')
+        else:
+            sys.stderr.write(
+                'Using default authorisation data file: {0!r}\n'.format(cfg.auth_data_path))
+    else:
+        if not os.path.exists(cfg.auth_data_path):
+            import occo.exceptions
+            raise occo.exceptions.ConfigurationError('Specified authorisation data file does not exist: \'{0}\''.format(cfg.auth_data_path))
     #
     ## Setup logging
     #
