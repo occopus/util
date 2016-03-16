@@ -438,10 +438,10 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
     if not cfg.cfg_path:
         possible_locations = [
             os.getenv('OCCOPUS_CONFIG_PATH'),
-            os.path.join(os.path.expanduser('~'),'.occopus/occopus.yaml'),
-            os.path.abspath('./occo.yaml'),
-            cfg_file_path('/etc/occo/occo.yaml'),
-            os.path.join(os.path.dirname(sys.argv[0]), 'occo.yaml'),
+            os.path.join(os.path.expanduser('~'),'.occopus/occopus_config.yaml'),
+            os.path.abspath('./occopus_config.yaml'),
+            cfg_file_path('/etc/occopus/occopus_config.yaml'),
+            os.path.join(os.path.dirname(sys.argv[0]), 'occopus_config.yaml'),
         ]
         sys.stderr.write(
             'No config file has been specified, '
