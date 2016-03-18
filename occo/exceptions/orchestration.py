@@ -68,14 +68,14 @@ class NoMatchingNodeDefinition(CriticalInfraProcessorError):
         Exception raised when there are no matching node definitions. Raised by
         uds.get_node_definition
     """
-    def __init__(self, infra_id, preselected_backend_ids, node_type, *args):
+    def __init__(self, infra_id, filter_keywords, node_type, *args):
         super(NoMatchingNodeDefinition,
               self).__init__(infra_id, 'No matching node definition', *args)
-        self.preselected_backend_ids = preselected_backend_ids
+        self.filter_keywords = filter_keywords
         self.node_type = node_type
     def __getinitargs__(self):
         return (self.infra_id,
-                self.preselected_backend_ids,
+                self.filter_keywords,
                 self.node_type) + self.args
 
 class NodeCreationError(CriticalInfraProcessorError):
