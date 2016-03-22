@@ -465,6 +465,9 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
         possible_auth_data_locations = [
             os.getenv('OCCOPUS_AUTH_DATA_PATH'),
             os.path.join(os.path.expanduser('~'),'.occopus/auth_data.yaml'),
+            os.path.abspath('./auth_data.yaml'),
+            cfg_file_path('/etc/occopus/auth_data.yaml'),
+            os.path.join(os.path.dirname(sys.argv[0]), 'auth_data.yaml'),
         ]
         sys.stderr.write(
             'No authorisation data file has been specified, '
