@@ -21,14 +21,14 @@ import yaml
 
 #log = logging.getLogger('occo.util.infralist')
 
-storefile = '/home/smith/.occopus/infralist.yaml'
-
 class Infralist(object):
-    def __init__(self,storefile=storefile):
+    def __init__(self,storefile=None):
+        if not storefile:
+            storefile = os.path.join(os.path.expanduser('~'),'.occopus/infralist.yaml')
         self.storefile = storefile
 
     def store(self,infralist):
-        dirname = os.path.basename(self.storefile)
+        dirname = os.path.dirname(self.storefile)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         with open(self.storefile, 'w') as yaml_file:
