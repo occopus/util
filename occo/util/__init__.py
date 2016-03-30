@@ -28,11 +28,12 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
            'f_raise',
            'basic_run_process', 'do_request', 'in_range',
            'HTTPStatusRange',
-           'dict_get', 'dict_merge', 'dict_map']
+           'dict_get', 'dict_merge', 'dict_map','Infralist']
 
 import itertools
 import logging
 import sys
+from infralist import *
 
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.

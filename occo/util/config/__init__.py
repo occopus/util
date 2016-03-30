@@ -493,7 +493,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
         cfg.configuration.get('logging', DEFAULT_LOGGING_CFG))
 
     log = logging.getLogger('occo')
-    log.info('Staring up; PID = %d', os.getpid())
+    log.info('Starting up; PID = %d', os.getpid())
     log.info('Using config file: %r', cfg.cfg_path)
 
     return cfg
