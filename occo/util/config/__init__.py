@@ -424,12 +424,16 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
     if cfg_path:
         cfg.cfg_path = cfg_file_path(cfg_path)
     else:
-        cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+        cfg.add_argument(name='--cfg',
+                         dest='cfg_path', type=cfg_file_path,
+                         help='path to Occopus config file')
 
     if auth_data_path:
         cfg.auth_data_path = auth_data_path
     else:
-        cfg.add_argument(name='--auth_data_path', dest='auth_data_path', type=auth_data_path)
+        cfg.add_argument(name='--auth_data_path', 
+                         dest='auth_data_path', type=auth_data_path,
+                         help='path to Occopus authorisation file')
 
     if setup_args:
         setup_args(cfg)
