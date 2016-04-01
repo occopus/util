@@ -447,15 +447,13 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
             cfg_file_path('/etc/occopus/occopus_config.yaml'),
             os.path.join(os.path.dirname(sys.argv[0]), 'occopus_config.yaml'),
         ]
-        sys.stderr.write(
-            'No config file has been specified, '
-            'searching these locations:\n{0}\n'.format(
-                '\n'.join(' - {0!r}'.format(p) for p in possible_locations)))
 
         cfg.cfg_path = path_coalesce(*possible_locations)
         if not cfg.cfg_path:
             import occo.exceptions
-            raise occo.exceptions.ConfigurationError('No configuration file has been found.')
+            raise occo.exceptions.ConfigurationError(
+                '\nNo config file has been found on these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_locations)))
         else:
             sys.stderr.write(
                 'Using default configuration file: {0!r}\n'.format(cfg.cfg_path))
@@ -473,14 +471,12 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
             cfg_file_path('/etc/occopus/auth_data.yaml'),
             os.path.join(os.path.dirname(sys.argv[0]), 'auth_data.yaml'),
         ]
-        sys.stderr.write(
-            'No authorisation data file has been specified, '
-            'searching these locations:\n{0}\n'.format(
-                '\n'.join(' - {0!r}'.format(p) for p in possible_auth_data_locations)))
         cfg.auth_data_path = path_coalesce(*possible_auth_data_locations)
         if not cfg.auth_data_path:
             import occo.exceptions
-            raise occo.exceptions.ConfigurationError('No authorisation data file has been found.')
+            raise occo.exceptions.ConfigurationError(
+                '\nNo authorisation data file has been found on these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_auth_data_locations)))
         else:
             sys.stderr.write(
                 'Using default authorisation data file: {0!r}\n'.format(cfg.auth_data_path))
@@ -498,7 +494,6 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
 
     log = logging.getLogger('occo')
     log.info('Starting up; PID = %d', os.getpid())
-    log.info('Using config file: %r', cfg.cfg_path)
 
     return cfg
 
