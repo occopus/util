@@ -433,7 +433,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
     else:
         cfg.add_argument(name='--auth_data_path', 
                          dest='auth_data_path', type=auth_data_path,
-                         help='path to Occopus authorisation file')
+                         help='path to Occopus authentication file')
 
     if setup_args:
         setup_args(cfg)
@@ -475,15 +475,15 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path
         if not cfg.auth_data_path:
             import occo.exceptions
             raise occo.exceptions.ConfigurationError(
-                '\nNo authorisation data file has been found on these locations:\n{0}\n'.format(
+                '\nNo authentication file has been found on these locations:\n{0}\n'.format(
                 '\n'.join(' - {0!r}'.format(p) for p in possible_auth_data_locations)))
         else:
             sys.stderr.write(
-                'Using default authorisation data file: {0!r}\n'.format(cfg.auth_data_path))
+                'Using default authentication file: {0!r}\n'.format(cfg.auth_data_path))
     else:
         if not os.path.exists(cfg.auth_data_path):
             import occo.exceptions
-            raise occo.exceptions.ConfigurationError('Specified authorisation data file does not exist: \'{0}\''.format(cfg.auth_data_path))
+            raise occo.exceptions.ConfigurationError('Specified authentication file does not exist: \'{0}\''.format(cfg.auth_data_path))
     #
     ## Setup logging
     #
