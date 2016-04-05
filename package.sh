@@ -12,10 +12,12 @@ if [ -d wheelhouse ]; then
     fi
 fi
 
+rm -rf $PDIR
+mkdir -p wheelhouse
 virtualenv --no-site-packages $PDIR
 source $PDIR/bin/activate
 pip install --upgrade pip
 pip install wheel
-pip wheel .
+pip wheel . -w wheelhouse
 deactivate
 rm -rf $PDIR
