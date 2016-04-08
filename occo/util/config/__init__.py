@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 """
-Configuration primitives for the SZTAKI Cloud Orchestrator.
+Configuration primitives for the OCCO Cloud Orchestrator.
 
 .. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 
@@ -227,7 +227,7 @@ class YAMLImport(object):
     .. code-block:: yaml
         :emphasize-lines: 8,9
 
-        cloud_handler: !CloudHandler
+        resource_handler: !ResourceHandler
             protocol: boto
             name: LPDS
             dry_run: false
@@ -259,7 +259,7 @@ class YAMLImport(object):
 
         from urlparse import urlparse
         url = urlparse(kwargs['url'])
-        log.info('%r', kwargs)
+        log.debug('%r', kwargs)
         return YAMLImporter.instantiate(
             protocol=url.scheme, parser=self.parser, **kwargs)
 
@@ -377,7 +377,7 @@ class PythonImport:
 
     This can be used to pre-load factory-implementation modules at the
     beginning of a YAML file. E.g.:
-    :class:`~occo.cloudhandler.backends.boto.BotoCloudHandler`.
+    :class:`~occo.resourcehandler.backends.boto.EC2ResourceHandler`.
 
     In effect, importing these modules from generic programs becomes
     unnecessary; therefore these programs become future proof. For example:
@@ -391,12 +391,12 @@ class PythonImport:
             - occo.infobroker
             - occo.infobroker.dsprovider
             - occo.infobroker.uds
-            - occo.cloudhandler
-            - occo.cloudhandler.backends.boto
+            - occo.resourcehandler
+            - occo.resourcehandler.backends.boto
             - occo.infraprocessor
 
         # The following would fail without (auto)importing the necessary modules
-        cloud_handler: !CloudHandler
+        resource_handler: !ResourceHandler
             protocol: boto
             name: LPDS
 
@@ -411,7 +411,7 @@ class PythonImport:
 
         return list(import_module(module.value) for module in node.value)
 
-def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
+def config(default_config=dict(), setup_args=None, cfg_path=None, auth_data_path=None, **kwargs):
     """
     Find and merge configuration sources.
     """
@@ -424,32 +424,66 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
     if cfg_path:
         cfg.cfg_path = cfg_file_path(cfg_path)
     else:
-        cfg.add_argument(name='--cfg', dest='cfg_path', type=cfg_file_path)
+        cfg.add_argument(name='--cfg',
+                         dest='cfg_path', type=cfg_file_path,
+                         help='path to Occopus config file')
+
+    if auth_data_path:
+        cfg.auth_data_path = auth_data_path
+    else:
+        cfg.add_argument(name='--auth_data_path', 
+                         dest='auth_data_path', type=auth_data_path,
+                         help='path to Occopus authentication file')
+
     if setup_args:
         setup_args(cfg)
     cfg.parse_args(**kwargs)
 
     if not cfg.cfg_path:
         possible_locations = [
-            os.path.abspath('./occo.yaml'),
-            cfg_file_path('/etc/occo/occo.yaml'),
-            os.path.join(os.path.dirname(sys.argv[0]), 'occo.yaml'),
+            os.getenv('OCCOPUS_CONFIG_PATH'),
+            os.path.join(os.path.expanduser('~'),'.occopus/occopus_config.yaml'),
+            os.path.abspath('./occopus_config.yaml'),
+            cfg_file_path('/etc/occopus/occopus_config.yaml'),
+            os.path.join(os.path.dirname(sys.argv[0]), 'occopus_config.yaml'),
         ]
-        sys.stderr.write(
-            'No config file has been specified, '
-            'searching these locations:\n{0}\n'.format(
-                '\n'.join(' - {0!r}'.format(p) for p in possible_locations)))
 
         cfg.cfg_path = path_coalesce(*possible_locations)
         if not cfg.cfg_path:
             import occo.exceptions
-            raise occo.exceptions.ConfigurationError('No configuration file has been found.')
+            raise occo.exceptions.ConfigurationError(
+                '\nNo config file has been found on these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_locations)))
         else:
             sys.stderr.write(
                 'Using default configuration file: {0!r}\n'.format(cfg.cfg_path))
 
     cfg.configuration = yaml_load_file(cfg.cfg_path)
 
+    #
+    ## Setup auth_data
+    #
+    if not cfg.auth_data_path:
+        possible_auth_data_locations = [
+            os.getenv('OCCOPUS_AUTH_DATA_PATH'),
+            os.path.join(os.path.expanduser('~'),'.occopus/auth_data.yaml'),
+            os.path.abspath('./auth_data.yaml'),
+            cfg_file_path('/etc/occopus/auth_data.yaml'),
+            os.path.join(os.path.dirname(sys.argv[0]), 'auth_data.yaml'),
+        ]
+        cfg.auth_data_path = path_coalesce(*possible_auth_data_locations)
+        if not cfg.auth_data_path:
+            import occo.exceptions
+            raise occo.exceptions.ConfigurationError(
+                '\nNo authentication file has been found on these locations:\n{0}\n'.format(
+                '\n'.join(' - {0!r}'.format(p) for p in possible_auth_data_locations)))
+        else:
+            sys.stderr.write(
+                'Using default authentication file: {0!r}\n'.format(cfg.auth_data_path))
+    else:
+        if not os.path.exists(cfg.auth_data_path):
+            import occo.exceptions
+            raise occo.exceptions.ConfigurationError('Specified authentication file does not exist: \'{0}\''.format(cfg.auth_data_path))
     #
     ## Setup logging
     #
@@ -459,8 +493,7 @@ def config(default_config=dict(), setup_args=None, cfg_path=None, **kwargs):
         cfg.configuration.get('logging', DEFAULT_LOGGING_CFG))
 
     log = logging.getLogger('occo')
-    log.info('Staring up; PID = %d', os.getpid())
-    log.info('Using config file: %r', cfg.cfg_path)
+    log.info('Starting up; PID = %d', os.getpid())
 
     return cfg
 

@@ -46,4 +46,9 @@ class AutoImportError(ConfigurationError):
 
 class SchemaError(Exception):
     """Exception representing a schema error in the input data."""
-    pass
+    def __init__(self, msg, context=None,*args):
+            Exception.__init__(self, *args)
+            self.msg = msg
+            self.context = context
+    def __str__(self):
+            return repr(self.msg)

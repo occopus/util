@@ -1,4 +1,14 @@
 
+v1.0 - April 2016
+- Rename cloudhandler to resourcehandler
+- New: central authentication data file
+- Adding env vars and $HOME/.occopus to config search pathes
+- New: Infralist class (store list of infraids)
+- New: SchemaError Exception class
+
+v0.3.0 - January 2016
+- No changes (rerelase to refresh version number)
+
 v0.2.0 - November 2015
 - Implement basic methods and classes
 - Utility functions
@@ -7,5 +17,4 @@ v0.2.0 - November 2015
 - Configuration handler
 - Implementation of Abstract Factory
 
-v0.3.0 - January 2016
-- No changes (rerelase to refresh version number)
+
