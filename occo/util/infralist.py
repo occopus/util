@@ -17,7 +17,7 @@ Primitives for managing list of infra identifiers
 """
 
 import os
-import yaml
+from ruamel import yaml
 
 #log = logging.getLogger('occo.util.infralist')
 
@@ -39,7 +39,7 @@ class Infralist(object):
         if os.path.isfile(self.storefile):
             with open(self.storefile, 'r') as stream:
                 try:
-                    infralist = list(yaml.load(stream))
+                    infralist = list(yaml.load(stream,Loader=yaml.Loader))
                 except yaml.YAMLError as exc:
                     print(exc)
         else:

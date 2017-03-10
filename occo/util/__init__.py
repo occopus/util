@@ -494,7 +494,7 @@ class logged(object):
 
 def yamldump(obj):
     """Shorthand for yaml.dump"""
-    import yaml
+    from ruamel import yaml
     return yaml.dump(obj, default_flow_style=False)
 
 def f_raise(ex):

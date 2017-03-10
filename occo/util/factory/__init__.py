@@ -87,7 +87,8 @@ __all__ = ['register', 'MultiBackend']
 
 import occo.exceptions as exc
 import occo.util as util
-import yaml, sys
+from ruamel import yaml
+import sys
 import logging
 
 log = logging.getLogger('occo.util')
