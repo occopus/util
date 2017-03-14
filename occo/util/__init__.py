@@ -18,7 +18,7 @@
 """
 
 __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
-           'find_effective_setting',
+           'find_effective_setting','unique_vmname',
            'Cleaner', 'wet_method',
            'rel_to_file', 'cfg_file_path', 'config_base_dir',
            'set_config_base_dir',
@@ -34,6 +34,13 @@ import itertools
 import logging
 import sys
 from infralist import *
+
+def unique_vmname(node_def):
+    return "occopus-{0}-{1}-{2}-{3}".format(
+           node_def.get("infra_name","undef_infraname")[0:18],
+           node_def.get("infra_id","undef_infraid")[0:8],
+           node_def.get("name","undef_nodename")[0:18],
+           node_def.get("node_id","undef_nodeid")[0:8])
 
 def icoalesce(iterable, default=None):
     """Returns the first non-null element of the iterable.
