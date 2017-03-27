@@ -4,11 +4,23 @@ set -ex
 
 PDIR=env/packaging
 
+DELOLDWHLDIR='no'
+for arg in "$@"
+do
+  if [[ $arg == "--yes" ]]; then
+    DELOLDWHLDIR='yes'
+  fi
+done
+
 if [ -d wheelhouse ]; then
-    echo -n 'Delete old wheelhouse? [y/N]'
-    read
-    if [ ".$REPLY" == '.y' ]; then
+    if [ "$DELOLDWHLDIR" == 'yes' ]; then
         rm -rf wheelhouse
+    else
+        echo 'Delete old wheelhouse? [Y/n]'
+        read
+        if [ -z "$REPLY" ] || [ "$REPLY" == 'y' ]; then
+            rm -rf wheelhouse
+        fi
     fi
 fi
 
