@@ -32,7 +32,7 @@ with statically defined data.
 __all__ = ['Config', 'DefaultConfig', 'DefaultYAMLConfig', 'config',
            'PythonImport', 'YAMLImport', 'yaml_load_file']
 
-import yaml
+from ruamel import yaml
 import argparse
 from ...util import curried, cfg_file_path, rel_to_file, \
     path_coalesce, file_locations, set_config_base_dir
@@ -97,7 +97,7 @@ class YAMLLoad_Parsed(YAMLLoad):
     the filename of the input file.
     """
     def _open_loader(self):
-        from yaml.loader import Loader
+        from ruamel.yaml.loader import Loader
         self.loader = Loader(self.stream)
         self.loader._filename = os.path.abspath(self.stream_name)
 

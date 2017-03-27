@@ -115,7 +115,7 @@ class NodeCreationError(CriticalInfraProcessorError):
     def __repr__(self):
         return '{classname}(<instance_data:{nodeid}>, {reason!r})'.format(
             classname=self.__class__.__name__,
-            nodeid=self.instance_data['node_id'],
+            nodeid=self.instance_data['node_id'] if self.instance_data else None,
             reason=self.reason)
 
 class NodeContextSchemaError(NodeCreationError):

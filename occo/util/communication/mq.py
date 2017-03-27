@@ -35,7 +35,7 @@ import pika
 import uuid
 import logging
 import threading
-import yaml
+from ruamel import yaml
 
 log = logging.getLogger('occo.util.comm.mq')
 
