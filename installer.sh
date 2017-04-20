@@ -8,16 +8,6 @@ if [ -d "$HOME/occopus" ] || [ -d "$HOME/.occopus" ]; then
   exit 1
 fi
 
-while true; do
-    read -p "Do you wish to run 'apt-get update/upgrade' before Occopus installation?" yn
-    case $yn in
-        [Yy]* ) sudo apt-get update;
-                sudo apt-get upgrade; break;;
-        [Nn]* ) break;;
-        * ) echo "Please, answer (y)es or (n)o.";;
-    esac
-done
-
 sudo apt-get install python python-pip python-dev python-virtualenv 
 sudo apt-get install libffi-dev libssl-dev
 sudo apt-get install redis-server mysql-client
