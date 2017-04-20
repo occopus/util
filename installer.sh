@@ -8,7 +8,7 @@ if [ -d "$HOME/occopus" ] || [ -d "$HOME/.occopus" ]; then
   exit 1
 fi
 
-sudo apt-get -z -qq install curl
+sudo apt-get -y -qq install curl
 sudo apt-get -y -qq install python python-pip python-dev python-virtualenv 
 sudo apt-get -y -qq install libffi-dev libssl-dev
 sudo apt-get -y -qq install redis-server mysql-client
