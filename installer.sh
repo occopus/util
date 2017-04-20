@@ -8,9 +8,9 @@ if [ -d "$HOME/occopus" ] || [ -d "$HOME/.occopus" ]; then
   exit 1
 fi
 
-sudo apt-get install python python-pip python-dev python-virtualenv 
-sudo apt-get install libffi-dev libssl-dev
-sudo apt-get install redis-server mysql-client
+sudo apt-get -y -qq install python python-pip python-dev python-virtualenv 
+sudo apt-get -y -qq install libffi-dev libssl-dev
+sudo apt-get -y -qq install redis-server mysql-client
 
 virtualenv $HOME/occopus; 
 source $HOME/occopus/bin/activate; 
