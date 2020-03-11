@@ -33,7 +33,7 @@ __all__ = ['coalesce', 'icoalesce', 'flatten', 'identity',
 import itertools
 import logging
 import sys
-from infralist import *
+from .infralist import *
 
 def unique_vmname(node_def):
     return "occopus-{0}-{1}-{2}-{3}".format(
@@ -97,7 +97,7 @@ def file_locations(filename, *paths):
     for p in paths:
         if callable(p):
             yield p(filename)
-        elif isinstance(p, basestring):
+        elif isinstance(p, str):
             yield os.path.join(p, filename)
         elif p is None:
             yield filename
@@ -257,7 +257,7 @@ def rel_to_file(path, basefile=None, d_stack_frame=0, relative_cwd=False):
         # Default base path: path to the caller file
         import inspect
         fr = inspect.currentframe()
-        for i in xrange(d_stack_frame+1):
+        for i in range(d_stack_frame+1):
             fr = fr.f_back
         basefile = fr.f_globals['__file__']
     pth = join(dirname(basefile), path)
@@ -370,7 +370,7 @@ class Cleaner(object):
     def deep_copy_dict(self, d):
         """ Satellite function to :func:`deep_copy` handling ``dict`` s. """
         return dict(self.deep_copy_kvpair(k,self.deep_copy(v))
-                    for k,v in d.iteritems())
+                    for k,v in list(d.items()))
     def deep_copy_list(self, l):
         """ Satellite function to :func:`deep_copy` handling ``list`` s. """
         return [self.bar if self.hold_back_value(i)
@@ -522,7 +522,7 @@ def basic_run_process(cmd, input_data=None):
     """
     log = logging.getLogger('occo.util')
 
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, str):
         cmd = cmd.split()
     import subprocess
     log.debug('Executing subprocess %r', cmd)
@@ -635,7 +635,7 @@ def dict_merge(dst, src):
 
     def rec_merge(dst, src):
         dst = copy.copy(dst)
-        for key, val in src.iteritems():
+        for key, val in list(src.items()):
             if (key in dst) and isinstance(val, dict) and isinstance(dst[key], dict):
                 dst[key] = rec_merge(dst[key], val)
             else:
@@ -654,7 +654,7 @@ def dict_map(items, value_trans=identity, key_trans=identity):
     :param function value_trans: The transformation to be applied to values.
     :param function key_trans: The transformation to be applied to keys.
     """
-    return dict(pair_map(items.iteritems(), value_trans, key_trans))
+    return dict(pair_map(iter(list(items.items())), value_trans, key_trans))
 
 def find_effective_setting(possibilities, default_none=False):
     """
@@ -677,7 +677,7 @@ def find_effective_setting(possibilities, default_none=False):
             if i[1] is not None:
                 return i
         except IndexError:
-            raise TypeError('Wrong item type', i), None, sys.exc_info()[2]
+            raise TypeError('Wrong item type', i).with_traceback(sys.exc_info()[2])
 
     if not default_none:
         raise RuntimeError('No effective setting found')

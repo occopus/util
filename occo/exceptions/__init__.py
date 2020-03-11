@@ -17,7 +17,7 @@
 .. moduleauthor:: Adam Visegradi <adam.visegradi@sztaki.mta.hu>
 """
 
-from __future__ import absolute_import
+
 
 from .infobroker import *
 from .communication import *

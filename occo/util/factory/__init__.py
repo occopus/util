@@ -120,7 +120,7 @@ class YAMLConstructor(object):
             raise exc.ConfigurationError(
                 'config',
                 'Abstract factory error while parsing YAML: {0}'.format(ex),
-                loader, node), None, sys.exc_info()[2]
+                loader, node).with_traceback(sys.exc_info()[2])
 
 class register(object):
     """Decorator class to register backends for the abstract classes.
@@ -200,7 +200,7 @@ class MultiBackend(object):
         dictionary, it must contain a ``protocol``, and it may contain ``args``
         and ``kwargs``.
         """
-        if isinstance(cfg, basestring):
+        if isinstance(cfg, str):
             return cls.instantiate(protocol=cfg)
         elif isinstance(cfg, dict):
             try:

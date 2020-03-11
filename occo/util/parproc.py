@@ -64,11 +64,11 @@ class GracefulProcess(multiprocessing.Process):
     SIGLIST = ['SIGINT', 'SIGTERM', 'SIGKILL']
 
     def graceful_terminate(self, timeout):
-        from itertools import izip
+        
 
         log.info('Killing process %d', self.pid)
 
-        for sig, next_sig in izip(self.SIGLIST, self.SIGLIST[1:]):
+        for sig, next_sig in zip(self.SIGLIST, self.SIGLIST[1:]):
             try:
                 log.debug('Trying %s', sig)
                 self._trykill(sig, timeout)

@@ -42,9 +42,7 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'ruamel.yaml',
-        'ruamel.ordereddict',
         'six',
-        'wsgiref',
         'requests',
     ],
 )
