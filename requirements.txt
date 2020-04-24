@@ -4,6 +4,6 @@ docker-py==1.4.0
 pika==0.9.14
 python-dateutil==2.2
 pytz==2014.9
-PyYAML==3.11
+PyYAML==5.1
 six==1.8.0
 requests==2.20.0
