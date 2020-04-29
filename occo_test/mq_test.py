@@ -39,12 +39,12 @@ class MQBootstrapTest(unittest.TestCase):
         self.test_config = cfg.default_mqconfig
         self.fail_config_2 = dict(protocol='amqp', processor=None)
     def test_inst(self):
-        map(lambda (cls1, cls2): \
+        list(map(lambda cls1_cls2: \
                 self.assertEqual(
-                    cls1.instantiate(**self.test_config).__class__,
-                    cls2),
+                    cls1_cls2[0].instantiate(**self.test_config).__class__,
+                    cls1_cls2[1]),
             [(comm.AsynchronProducer, mq.MQAsynchronProducer),
-             (comm.RPCProducer, mq.MQRPCProducer)])
+             (comm.RPCProducer, mq.MQRPCProducer)]))
     def test_inst_consumer(self):
         self.assertEqual(
             comm.EventDrivenConsumer.instantiate(
@@ -54,8 +54,8 @@ class MQBootstrapTest(unittest.TestCase):
         def tst(cls):
             with self.assertRaises(exc.ConfigurationError):
                 cls.instantiate(**self.fail_config_2)
-        map(tst, [comm.AsynchronProducer, comm.RPCProducer,
-                  comm.EventDrivenConsumer])
+        list(map(tst, [comm.AsynchronProducer, comm.RPCProducer,
+                  comm.EventDrivenConsumer]))
 
 class MQConnectionTest(unittest.TestCase):
     def setUp(self):

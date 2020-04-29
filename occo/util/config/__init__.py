@@ -12,7 +12,7 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 
-from __future__ import absolute_import
+
 
 """
 Configuration primitives for the OCCO Cloud Orchestrator.
@@ -145,7 +145,7 @@ class Config(object):
     def __str__(self):
         # Return only the essential attributes by skipping self.__parser
         return yaml.dump(
-                dict((k,v) for k,v in self.__dict__.iteritems()
+                dict((k,v) for k,v in self.__dict__.items()
                      if k != '_Config__parser'),
                 default_flow_style=False)
 
@@ -257,7 +257,7 @@ class YAMLImport(object):
         log = logging.getLogger('occo.util')
         log.debug(yaml.dump(self, default_flow_style=False))
 
-        from urlparse import urlparse
+        from urllib.parse import urlparse
         url = urlparse(kwargs['url'])
         log.debug('%r', kwargs)
         return YAMLImporter.instantiate(

@@ -43,7 +43,7 @@ class ConfigTest(unittest.TestCase):
         self.filename = util.rel_to_file('import_test/parent.yaml')
         self.control_filename = util.rel_to_file('import_test/control.yaml')
         data = cfg.yaml_load_file(self.filename)
-        print repr(data)
+        print(repr(data))
         self.assertIn('child1', data)
         child1 = data['child1']
         self.assertIs(type(child1), dict)
@@ -94,5 +94,5 @@ class ConfigTest(unittest.TestCase):
             try:
                 c = cfg(args=[])
             except occo.exceptions.ConfigurationError as e:
-                print str(e)
+                print(str(e))
                 raise

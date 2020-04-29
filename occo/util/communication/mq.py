@@ -27,7 +27,7 @@ protocol.
 __all__ = ['MQHandler', 'MQAsynchronProducer', 'MQRPCProducer',
            'MQEventDrivenConsumer']
 
-import comm
+from . import comm
 import occo.util as util
 import occo.exceptions as exc
 import occo.util.factory as factory

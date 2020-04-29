@@ -50,11 +50,11 @@ class GeneralTest(unittest.TestCase):
             return util.coalesce(None, None, None, DummyException(':P'))
     def test_flatten(self):
         l1, l2, l3 = [0, 1, 2, 3], [], [4, 5, 6]
-        self.assertEqual(list(util.flatten([l1, l2, l3])), range(7))
+        self.assertEqual(list(util.flatten([l1, l2, l3])), list(range(7)))
     def test_rel_to_file(self):
         # TODO 1) this is not a test
         #      2) need to test d_stack_frame too
-        print util.rel_to_file('test.yaml')
+        print(util.rel_to_file('test.yaml'))
     def test_cfg_path1(self):
         import sys, os
         # Reset config path
@@ -121,9 +121,9 @@ class GeneralTest(unittest.TestCase):
         i = util.identity
         self.assertIsNone(i())
         self.assertIsNone(i(None))
-        self.assertEquals(i(1), 1)
+        self.assertEqual(i(1), 1)
         x, y, z = i(1, 2, 3)
-        self.assertEquals((x, y, z), (1, 2, 3))
+        self.assertEqual((x, y, z), (1, 2, 3))
 
     def test_nothing(self):
         self.assertFalse(util.nothing())

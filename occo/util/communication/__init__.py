@@ -138,5 +138,5 @@ Example
 
 """
 
-from comm import *
-from mq import *
+from .comm import *
+from .mq import *
