@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 if [ ! -d wheelhouse ]; then
     echo -n 'Wheelhouse has not been generated yet. Run package.sh? [Y/n]'
@@ -10,4 +10,5 @@ if [ ! -d wheelhouse ]; then
     fi
 fi
 
-scp wheelhouse/OCCO?Util*.whl ubuntu@192.168.155.11:/opt/packages
+scp wheelhouse/OCCO?Util*.whl ubuntu@10.1.14.86:/tmp
+ssh ubuntu@10.1.14.86 sudo cp /tmp/OCCO?Util*.whl /mnt/pypi/packages
